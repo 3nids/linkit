@@ -1,0 +1,52 @@
+# What ? 
+
+Link It is a [QGIS](http://www.qgis.org) plugin to link a feature to another. 
+
+The idea is to copy in a user-defined field the ID of a feature by clicking on it.
+
+# How ?
+
+A demo is visible on [youtube](http://www.youtube.com/watch?v=8xgUjK0MJcM&hd=1).
+
+This plugin **requires** the [Item Browser](http://plugins.qgis.org/plugins/itembrowser/) to work.
+
+1. First, activate both plugings (_Link It_ and _Item Browser_);
+2. Connect required layer in _Item Browser_;
+3. Connect the same layer in _Link It_ and specify the field where the feature ID will be written;
+4. Select a feature on map;
+5. In the _Link It_ dialog, click on select, then click on the feature you want to copy its ID.
+
+# Tip
+
+If you want to have a layer drawing a nice arrow from one feature (child) to another (parent), here you go.
+Just change the value within _***_. 
+
+	CREATE OR REPLACE VIEW distribution.pipe_child_parent AS
+		SELECT child, parent,
+			 ST_CurveToLine(ST_GeomFromEWKT('SRID=_YOURSRID_;CIRCULARSTRING('
+				||ST_X(start_point)||' '||ST_Y(start_point)
+				||','||
+				ST_X(middle_point)+distance*cos(azimuth)||' '||ST_Y(middle_point)+distance*sin(azimuth)
+				||','||
+				ST_X(end_point)||' '||ST_Y(end_point) 
+				||')'
+			),15)::geometry(LineString,21781) AS wkb_geometry
+		FROM (
+			SELECT child,parent,
+				start_point , end_point ,
+				pi()/2+ST_Azimuth(start_point,end_point) AS azimuth,
+				.5*ST_Distance(start_point,end_point) AS distance,
+				ST_Line_Interpolate_Point(ST_MakeLine( start_point , end_point ),.5)::geometry(Point,21781) AS middle_point
+			FROM (
+				SELECT a.id AS child ,b.id AS parent, 
+						ST_Line_Interpolate_Point(a.wkb_geometry,.5)::geometry(Point,21781) AS start_point,
+						/* select end_point at 4 meters from the closest side of the pipe */
+						ST_ClosestPoint(ST_MakeLine(  
+							ST_Line_Interpolate_Point(b.wkb_geometry,   LEAST(1,  4/b._length2d/2))::geometry(Point,21781) ,
+							ST_Line_Interpolate_Point(b.wkb_geometry,GREATEST(0,1-4/b._length2d/2))::geometry(Point,21781) 
+						),a.wkb_geometry) AS end_point
+				FROM _yourschema_._yourtable_ a 
+				INNER JOIN _yourschema_._yourtable_ b ON a._fieldOfParentID_ = b.id
+				WHERE a.id_parent IS NOT NULL
+			) AS foo
+		) AS foo2;
