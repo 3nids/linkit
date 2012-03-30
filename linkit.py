@@ -15,6 +15,8 @@ from linker import linker
 from settings import LinkItSettings
 from connect_layer import connectLayer
 
+import resources
+
 try:
     _fromUtf8 = QString.fromUtf8
 except AttributeError:
@@ -29,16 +31,17 @@ class LinkIt():
 	def initGui(self):
 		self.connectLayerDlg = connectLayer(self.iface)
 		# run connection when new layers are loaded
-		QObject.connect(self.iface.mapCanvas() , SIGNAL("layersChanged ()") , self.connect ) 
+		QObject.connect(self.iface.mapCanvas() , SIGNAL("layersChanged ()") , self.connect )
 		
-		# CONNECTLAYERS
-		self.connectLayerAction = QAction("Connect layer", self.iface.mainWindow())
-		# connect the action to the run method
+		# Connect layers
+		self.connectLayerAction = QAction(QIcon(":/plugins/linkit/icons/connect.png"), "Connect layer", self.iface.mainWindow())
 		QObject.connect(self.connectLayerAction, SIGNAL("triggered()"), self.connectLayerDlg.exec_)
 		QObject.connect(self.connectLayerDlg,    SIGNAL("accepted()"),  self.connect)
-		# Add toolbar button and menu item
-		self.iface.addToolBarIcon(self.connectLayerAction)
 		self.iface.addPluginToMenu("&Link It", self.connectLayerAction)
+		# help
+		self.helpAction = QAction(QIcon(":/plugins/linkit/icons/help.png"), "Help", self.iface.mainWindow())
+		QObject.connect(self.helpAction, SIGNAL("triggered()"), lambda: QDesktopServices.openUrl(QUrl("https://github.com/3nids/linkit/wiki")))
+		self.iface.addPluginToMenu("&Link It", self.helpAction)
 				
 	def unload(self):
 		self.iface.removePluginMenu("&Link It",self.connectLayerAction)
