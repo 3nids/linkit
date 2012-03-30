@@ -6,7 +6,7 @@ The idea is to copy in a user-defined field the ID of a feature by clicking on i
 
 # How ?
 
-A demo is visible on [youtube](http://www.youtube.com/watch?v=8xgUjK0MJcM&hd=1).
+A demo is visible on [youtube](http://www.youtube.com/v/8xgUjK0MJcM&hd=1).
 
 This plugin **requires** the [Item Browser](http://plugins.qgis.org/plugins/itembrowser/) to work.
 
@@ -19,7 +19,7 @@ This plugin **requires** the [Item Browser](http://plugins.qgis.org/plugins/item
 # Tip
 
 If you want to have a layer drawing a nice arrow from one feature (child) to another (parent), here you go.
-Just change the value within _***_. 
+Just change the values between underscores. 
 
 	CREATE OR REPLACE VIEW distribution.pipe_child_parent AS
 		SELECT child, parent,
@@ -50,3 +50,7 @@ Just change the value within _***_.
 				WHERE a.id_parent IS NOT NULL
 			) AS foo
 		) AS foo2;
+
+# Changelog
+### 1.0.1 29.03.2012
+* Added help to menu
