@@ -34,26 +34,25 @@ class linker( QDockWidget , Ui_linker ):
 
 	def unload(self):
 		self.iface.removeDockWidget(self)
-		
+
 	def layer(self):
 		return self.settings.value("layer")
-		
+
 	def itemChanged(self,fid):
 		self.clear()
 		self.setVisible(True)
 		self.fid      = fid
-		self.idFieldPos     = self.provider.fieldNameIndex('id')
-		self.parentFieldPos = self.provider.fieldNameIndex('id_parent')
+		self.fieldIndex = self.provider.fieldNameIndex(self.settings.value('field'))
 		f = QgsFeature()
-		if self.provider.featureAtId(fid,f,True,[self.parentFieldPos]) is True:
+		if self.provider.featureAtId(fid,f,True,[self.fieldIndex]) is True:
 			fieldmap = f.attributeMap()
-			idParent = fieldmap[self.parentFieldPos].toString()
-			self.idParent.setText(idParent)		
-		
+			currentValue = fieldmap[self.fieldIndex].toString()
+			self.linkedItemID.setText(currentValue)		
+
 	def clear(self):
 		self.setVisible(False)
 		self.fid = False
-		self.idParent.clear()
+		self.linkedItemID.clear()
 
 	@pyqtSignature("on_selectButton_clicked()")
 	def on_selectButton_clicked(self):	
@@ -67,8 +66,8 @@ class linker( QDockWidget , Ui_linker ):
 
 	@pyqtSignature("on_deleteButton_clicked()")
 	def on_deleteButton_clicked(self):	
-		self.idParent.clear()
-	
+		self.linkedItemID.clear()
+
 	@pyqtSignature("on_cancelButton_clicked()")
 	def on_cancelButton_clicked(self):	
 		canvas = self.iface.mapCanvas()
@@ -80,22 +79,23 @@ class linker( QDockWidget , Ui_linker ):
 	def toolChanged(self, tool):
 		self.on_cancelButton_clicked()
 
-	@pyqtSignature("on_idParent_textChanged(QString)")
-	def on_idParent_textChanged(self,new):
-		new = new.toInt()[0] # If new is empty (string), then a NULL value is stored based on SQL rule
-		self.provider.changeAttributeValues( { self.fid : {self.parentFieldPos : QVariant(new) } } )
+	@pyqtSignature("on_linkedItemID_textChanged(QString)")
+	def on_linkedItemID_textChanged(self,new):
+		new = new.toInt()[0]
+		if new==0: new = None
+		self.provider.changeAttributeValues( { self.fid : {self.fieldIndex : QVariant(new) } } )
+		self.iface.mapCanvas().refresh()
 
 	def onCanvasClicked(self, point, button, modifiers):
 		if button != Qt.LeftButton:
 			return
 		canvas = self.iface.mapCanvas()
 		point = canvas.mapRenderer().mapToLayerCoordinates(self.layer, point)
-
-		pixTolerance = 10
+		pixTolerance = 6
 		mapTolerance = pixTolerance * canvas.mapUnitsPerPixel()
 		rect = QgsRectangle(point.x()-mapTolerance,point.y()-mapTolerance,point.x()+mapTolerance,point.y()+mapTolerance)
 
-		self.provider.select([self.idFieldPos], rect, True, True)
+		self.provider.select([], rect, True, True)
 		subset = []
 		f = QgsFeature()
 		while (self.provider.nextFeature(f)):
@@ -104,12 +104,12 @@ class linker( QDockWidget , Ui_linker ):
 			QMessageBox.warning( self, "Link It", QApplication.translate("LinkIt", "Two items have been selected. Please select only one item.", None, QApplication.UnicodeUTF8) )
 			return
 		if len(subset) == 1:
-			fieldmap=subset[0].attributeMap()
-			self.idParent.setText(fieldmap[self.idFieldPos].toString())
+			self.linkedItemID.setText("%u" % f.id())
 			self.on_cancelButton_clicked()
-			canvas.refresh()
 
 
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 class getNeighbor(QgsMapToolEmitPoint):
 	def __init__(self, canvas):
 		QgsMapToolEmitPoint.__init__(self, canvas)
@@ -117,4 +117,3 @@ class getNeighbor(QgsMapToolEmitPoint):
 	def canvasPressEvent(self, mouseEvent):
 		point = self.toMapCoordinates( mouseEvent.pos() )
 		self.emit( SIGNAL( "canvasClickedWithModifiers" ), point, mouseEvent.button(), mouseEvent.modifiers() )
-

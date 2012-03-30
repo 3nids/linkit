@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui_linker.ui'
 #
-# Created: Thu Mar 29 17:05:12 2012
+# Created: Fri Mar 30 07:50:46 2012
 #      by: PyQt4 UI code generator 4.8.5
 #
 # WARNING! All changes made in this file will be lost!
@@ -23,9 +23,9 @@ class Ui_linker(object):
         self.dockWidgetContents.setObjectName(_fromUtf8("dockWidgetContents"))
         self.gridLayout_3 = QtGui.QGridLayout(self.dockWidgetContents)
         self.gridLayout_3.setObjectName(_fromUtf8("gridLayout_3"))
-        self.idParent = QtGui.QLineEdit(self.dockWidgetContents)
-        self.idParent.setObjectName(_fromUtf8("idParent"))
-        self.gridLayout_3.addWidget(self.idParent, 1, 2, 1, 2)
+        self.linkedItemID = QtGui.QLineEdit(self.dockWidgetContents)
+        self.linkedItemID.setObjectName(_fromUtf8("linkedItemID"))
+        self.gridLayout_3.addWidget(self.linkedItemID, 1, 2, 1, 2)
         self.selectButton = QtGui.QToolButton(self.dockWidgetContents)
         self.selectButton.setText(QtGui.QApplication.translate("linker", "Select", None, QtGui.QApplication.UnicodeUTF8))
         self.selectButton.setObjectName(_fromUtf8("selectButton"))

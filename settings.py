@@ -4,7 +4,6 @@ denis.rouzaud@gmail.com
 * * * * * * * * * * * *
 Link It 
 QGIS module
-
 """
 
 from PyQt4.QtCore import *

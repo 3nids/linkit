@@ -4,7 +4,6 @@ denis.rouzaud@gmail.com
 * * * * * * * * * * * *
 Link It 
 QGIS module
-
 """
 
 # Import the PyQt and QGIS libraries

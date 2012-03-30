@@ -16,7 +16,7 @@
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QGridLayout" name="gridLayout_3">
     <item row="1" column="2" colspan="2">
-     <widget class="QLineEdit" name="idParent"/>
+     <widget class="QLineEdit" name="linkedItemID"/>
     </item>
     <item row="2" column="2">
      <widget class="QToolButton" name="selectButton">
