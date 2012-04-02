@@ -30,13 +30,13 @@ class LinkIt():
 	
 	def initGui(self):
 		self.connectLayerDlg = connectLayer(self.iface)
+		QObject.connect(self.connectLayerDlg, SIGNAL("accepted()"), self.connect)
 		# run connection when new layers are loaded
 		QObject.connect(self.iface.mapCanvas() , SIGNAL("layersChanged ()") , self.connect )
 		
 		# Connect layers
 		self.connectLayerAction = QAction(QIcon(":/plugins/linkit/icons/connect.png"), "Connect layer", self.iface.mainWindow())
 		QObject.connect(self.connectLayerAction, SIGNAL("triggered()"), self.connectLayerDlg.exec_)
-		QObject.connect(self.connectLayerDlg,    SIGNAL("accepted()"),  self.connect)
 		self.iface.addPluginToMenu("&Link It", self.connectLayerAction)
 		# help
 		self.helpAction = QAction(QIcon(":/plugins/linkit/icons/help.png"), "Help", self.iface.mainWindow())
@@ -45,6 +45,7 @@ class LinkIt():
 				
 	def unload(self):
 		self.iface.removePluginMenu("&Link It",self.connectLayerAction)
+		self.iface.removePluginMenu("&Link It",self.helpAction)
 		self.iface.removeToolBarIcon(self.connectLayerAction)
 		
 	def connect(self):
