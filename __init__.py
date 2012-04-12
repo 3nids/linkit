@@ -13,7 +13,7 @@ def description():
 def version():
     return "Version 1.0.2"
 def icon():
-    return "icon.png"
+    return "icons/linkit.png"
 def qgisMinimumVersion():
     return "1.7"
 def classFactory(iface):

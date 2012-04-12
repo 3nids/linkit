@@ -1,8 +1,7 @@
 <RCC>
     <qresource prefix="/plugins/linkit" >
         <file>icons/connect.png</file>
-    </qresource>    
-    <qresource prefix="/plugins/linkit" >
+        <file>icons/linkit.png</file>
         <file>icons/help.png</file>
     </qresource>
 </RCC>
