@@ -1,10 +1,10 @@
-# What ? 
+## What ? 
 
 Link It is a [QGIS](http://www.qgis.org) plugin to link a feature to another. 
 
 The idea is to copy in a user-defined field the ID of a feature by clicking on it.
 
-# How ?
+## How ?
 
 A demo is visible on [youtube](http://www.youtube.com/v/8xgUjK0MJcM&hd=1).
 
@@ -16,7 +16,7 @@ This plugin **requires** the [Item Browser](http://plugins.qgis.org/plugins/item
 4. Select a feature on map;
 5. In the _Link It_ dialog, click on select, then click on the feature you want to copy its ID.
 
-# Tip
+## Tip
 
 If you want to have a layer drawing a nice arrow from one feature (child) to another (parent), here you go.
 Just change the values between underscores. 
@@ -51,10 +51,19 @@ Just change the values between underscores.
 			) AS foo
 		) AS foo2;
 
-# Changelog
-### 1.0.1 29.03.2012
-* Added help to menu
+## Changelog
 
-### 1.0.2 02.04.2012
+**1.1.0** 12.04.2012
+
+* Added plugin icon
+
+**1.0.2** 02.04.2012
+
 * Unload correctly
 * Fix metadata short description
+
+**1.0.1** 29.03.2012
+
+* Added help to menu
+
+
