@@ -11,7 +11,7 @@ def name():
 def description():
     return "To link a feature to another. By clicking on map, the plugin will then automatically save the feature's ID in the appropriate field defined by the user. [This plugin requires ItemBrowser]"
 def version():
-    return "Version 1.0.2"
+    return "Version 1.1.1"
 def icon():
     return "icons/linkit.png"
 def qgisMinimumVersion():

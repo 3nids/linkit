@@ -8,7 +8,7 @@
 [general]
 name=Link It
 description=Link It is a QGIS plugin to link a feature to another. By clicking on map, the plugin will then automatically save the feature's ID in the appropriate field defined by the user. [This plugin requires ItemBrowser]
-version=1.1.0
+version=1.1.1
 qgisMinimumVersion=1.7
 
 icon=icons/linkit.png

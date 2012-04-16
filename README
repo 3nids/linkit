@@ -53,6 +53,10 @@ Just change the values between underscores.
 
 ## Changelog
 
+**1.1.1** 16.04.2012
+
+* Fix version number in __init__
+
 **1.1.0** 12.04.2012
 
 * Added plugin icon
