@@ -12,12 +12,9 @@ from qgis.core import *
 from qgis.gui import *
 
 from settings import LinkItSettings
-from ui_linker import Ui_linker
+from maptoolgetfeature import MapToolGetFeature
+from ui_linker import Ui_linker	
 
-try:
-    _fromUtf8 = QString.fromUtf8
-except AttributeError:
-    _fromUtf8 = lambda s: s
 
 class linker( QDockWidget , Ui_linker ):
 	def __init__(self,iface,layer):
@@ -34,20 +31,25 @@ class linker( QDockWidget , Ui_linker ):
 
 	def unload(self):
 		self.iface.removeDockWidget(self)
-
-	def layer(self):
-		return self.settings.value("layer")
+		
+	def fieldIndex(self):
+		return self.provider.fieldNameIndex(self.settings.value('field'))
 
 	def itemChanged(self,fid):
 		self.clear()
 		self.setVisible(True)
-		self.fid      = fid
-		self.fieldIndex = self.provider.fieldNameIndex(self.settings.value('field'))
+		self.fid = fid
 		f = QgsFeature()
-		if self.provider.featureAtId(fid,f,True,[self.fieldIndex]) is True:
-			fieldmap = f.attributeMap()
-			currentValue = fieldmap[self.fieldIndex].toString()
-			self.linkedItemID.setText(currentValue)		
+		try:
+			if self.layer.featureAtId(fid,f,True,True) is True:
+				currentValue = f.attribute(self.settings.value('field')).toString()
+				self.linkedItemID.setText(currentValue)		
+		except: # qgis <1.9
+			idx = self.fieldIndex()
+			if self.provider.featureAtId(fid,f,True,[idx]) is True:
+				fieldmap = f.attributeMap()
+				currentValue = fieldmap[idx].toString()
+				self.linkedItemID.setText(currentValue)		
 
 	def clear(self):
 		self.setVisible(False)
@@ -57,9 +59,9 @@ class linker( QDockWidget , Ui_linker ):
 	@pyqtSignature("on_selectButton_clicked()")
 	def on_selectButton_clicked(self):	
 		canvas = self.iface.mapCanvas()
-		self.getNeighbor = getNeighbor(canvas)
-		QObject.connect(self.getNeighbor , SIGNAL("canvasClickedWithModifiers") , self.onCanvasClicked ) 
-		canvas.setMapTool(self.getNeighbor)
+		self.mapTool = MapToolGetFeature(canvas, self.layer)
+		QObject.connect(self.mapTool , SIGNAL("featureIdentified") , self.featureIdentified ) 
+		canvas.setMapTool(self.mapTool)
 		QObject.connect( canvas, SIGNAL( "mapToolSet(QgsMapTool *)" ), self.toolChanged)
 		self.selectButton.hide()
 		self.cancelButton.show()
@@ -71,7 +73,7 @@ class linker( QDockWidget , Ui_linker ):
 	@pyqtSignature("on_cancelButton_clicked()")
 	def on_cancelButton_clicked(self):	
 		canvas = self.iface.mapCanvas()
-		canvas.unsetMapTool(self.getNeighbor)
+		canvas.unsetMapTool(self.mapTool)
 		self.selectButton.show()
 		self.cancelButton.hide()
 		QObject.disconnect( canvas, SIGNAL( "mapToolSet(QgsMapTool *)" ), self.toolChanged)
@@ -83,37 +85,9 @@ class linker( QDockWidget , Ui_linker ):
 	def on_linkedItemID_textChanged(self,new):
 		new = new.toInt()[0]
 		if new==0: new = None
-		self.provider.changeAttributeValues( { self.fid : {self.fieldIndex : QVariant(new) } } )
+		self.provider.changeAttributeValues( { self.fid : {self.fieldIndex() : QVariant(new) } } )
 		self.iface.mapCanvas().refresh()
 
-	def onCanvasClicked(self, point, button, modifiers):
-		if button != Qt.LeftButton:
-			return
-		canvas = self.iface.mapCanvas()
-		point = canvas.mapRenderer().mapToLayerCoordinates(self.layer, point)
-		pixTolerance = 6
-		mapTolerance = pixTolerance * canvas.mapUnitsPerPixel()
-		rect = QgsRectangle(point.x()-mapTolerance,point.y()-mapTolerance,point.x()+mapTolerance,point.y()+mapTolerance)
-
-		self.provider.select([], rect, True, True)
-		subset = []
-		f = QgsFeature()
-		while (self.provider.nextFeature(f)):
-			subset.append(f)
-		if len(subset) > 1:
-			QMessageBox.warning( self, "Link It", QApplication.translate("LinkIt", "Two items have been selected. Please select only one item.", None, QApplication.UnicodeUTF8) )
-			return
-		if len(subset) == 1:
-			self.linkedItemID.setText("%u" % f.id())
-			self.on_cancelButton_clicked()
-
-
-# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-class getNeighbor(QgsMapToolEmitPoint):
-	def __init__(self, canvas):
-		QgsMapToolEmitPoint.__init__(self, canvas)
-
-	def canvasPressEvent(self, mouseEvent):
-		point = self.toMapCoordinates( mouseEvent.pos() )
-		self.emit( SIGNAL( "canvasClickedWithModifiers" ), point, mouseEvent.button(), mouseEvent.modifiers() )
+	def featureIdentified(self, new):
+		self.linkedItemID.setText("%u" % new)
+		self.on_cancelButton_clicked()
