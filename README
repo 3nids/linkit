@@ -21,7 +21,7 @@ This plugin **requires** the [Item Browser](http://plugins.qgis.org/plugins/item
 If you want to have a layer drawing a nice arrow from one feature (child) to another (parent), here you go.
 Just change the values between underscores. 
 
-	CREATE OR REPLACE VIEW distribution.pipe_child_parent AS
+	CREATE OR REPLACE VIEW _schema_._view_name_ AS
 		SELECT child, parent,
 			 ST_CurveToLine(ST_GeomFromEWKT('SRID=_YOURSRID_;CIRCULARSTRING('
 				||ST_X(start_point)||' '||ST_Y(start_point)
@@ -52,6 +52,12 @@ Just change the values between underscores.
 		) AS foo2;
 
 ## Changelog
+
+**2.0** 11.02.2013
+
+* Now uses the mapToolIdentify class
+* Returns the closest results if several found (Qgis < 1.9)
+* Updated for Qgis >=1.9
 
 **1.1.1** 16.04.2012
 
