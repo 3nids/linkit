@@ -41,8 +41,8 @@ class linker( QDockWidget , Ui_linker ):
 		self.fid = fid
 		f = QgsFeature()
 		try:
-			if self.layer.featureAtId(fid,f,True,True) is True:
-				currentValue = f.attribute(self.settings.value('field')).toString()
+			if self.layer.getFeatures( QgsFeatureRequest().setFilterFid( fid ) ).nextFeature( f ):
+				currentValue = f.attribute( self.settings.value('field') ).toString()
 				self.linkedItemID.setText(currentValue)		
 		except: # qgis <1.9
 			idx = self.fieldIndex()
