@@ -1,15 +1,9 @@
-# This file contains metadata for your plugin. Beginning
-# with version 1.8 this is the preferred way to supply information about a
-# plugin. The current method of embedding metadata in __init__.py will
-# be supported until version 2.0
-
-# This file should be included when you package your plugin.
 
 [general]
 name=Link It
 description=Link It is a QGIS plugin to link a feature to another. By clicking on map, the plugin will then automatically save the feature's ID in the appropriate field defined by the user. [This plugin requires ItemBrowser]
 version=2.0
-qgisMinimumVersion=1.8
+qgisMinimumVersion=2.0
 author=Denis Rouzaud
 email=denis.rouzaud@gmail.com
 
