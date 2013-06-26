@@ -15,6 +15,8 @@ from core.link import Link, getLink
 from gui.linkmanagerdialog import LinkManagerDialog
 from gui.linkerdock import LinkerDock
 
+import resources
+
 
 class LinkIt():
     def __init__(self, iface):
