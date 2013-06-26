@@ -25,7 +25,7 @@ class LinkIt():
     def initGui(self):
         QgsProject.instance().readProject.connect(self.createActions)
         # connect layer
-        self.linkManagerAction = QAction(QIcon(":/plugins/linkit/icons/connect.png"), "Links managers", self.iface.mainWindow())
+        self.linkManagerAction = QAction(QIcon(":/plugins/linkit/icons/connect.png"), "Links manager", self.iface.mainWindow())
         self.linkManagerAction.triggered.connect(self.linkManagerDialog)
         self.iface.addPluginToMenu("&Link It", self.linkManagerAction)
         # help

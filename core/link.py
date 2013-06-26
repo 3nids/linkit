@@ -43,10 +43,13 @@ class Link():
     def deleteAction(self):
         actions = self.sourceLayer.actions()
         while True:
-            for i in range(actions.size()):
+            i = 0
+            while i < actions.size():
                 if "qgis.utils.plugins['linkit'].linkit(" in actions[i].action():
                     actions.removeAction(i)
+                    i = 0
                     continue
+                i += 1
             break
 
     def delete(self):
