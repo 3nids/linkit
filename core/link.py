@@ -38,7 +38,7 @@ class Link():
                                                                                           self.sourceLayer.id())
         while True:
             for i in range(actions.size()):
-                if actions[i].action() == actionStr:
+                if "qgis.utils.plugins['linkit'].linkit(" in actions[i].action():
                     actions.removeAction(i)
                     continue
             break
