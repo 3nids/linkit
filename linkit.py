@@ -9,46 +9,51 @@ QGIS module
 
 from PyQt4.QtCore import QUrl, Qt
 from PyQt4.QtGui import QIcon, QAction, QDesktopServices
-from qgis.core import QgsMapLayerRegistry
+from qgis.core import QgsMapLayerRegistry, QgsFeature, QgsFeatureRequest, QgsProject
 
-from core.mysettings import MySettings
-from gui.connectlayerdialog import ConnectLayerDialog
-from gui.linker import Linker
+from core.link import Link, getLink
+from gui.linkmanagerdialog import LinkManagerDialog
+from gui.linkerdock import LinkerDock
 
 
 class LinkIt():
-
     def __init__(self, iface):
         self.iface = iface
-        self.settings = MySettings()
 
     def initGui(self):
-        self.iface.mapCanvas().layersChanged.connect(self.connect)
+        QgsProject.instance().readProject.connect(self.createActions)
         # connect layer
-        self.connectLayerAction = QAction(QIcon(":/plugins/linkit/icons/connect.png"), "Connect layer", self.iface.mainWindow())
-        self.connectLayerAction.triggered.connect(self.connectLayerDialog)
-        self.iface.addPluginToMenu("&Link It", self.connectLayerAction)
+        self.linkManagerAction = QAction(QIcon(":/plugins/linkit/icons/connect.png"), "Links managers", self.iface.mainWindow())
+        self.linkManagerAction.triggered.connect(self.linkManagerDialog)
+        self.iface.addPluginToMenu("&Link It", self.linkManagerAction)
         # help
         self.helpAction = QAction(QIcon(":/plugins/linkit/icons/help.png"), "Help", self.iface.mainWindow())
         self.helpAction.triggered.connect(lambda: QDesktopServices().openUrl(QUrl("https://github.com/3nids/linkit/wiki")))
         self.iface.addPluginToMenu("&Link It", self.helpAction)
                   
     def unload(self):
-        self.iface.removePluginMenu("&Link It", self.connectLayerAction)
+        self.iface.removePluginMenu("&Link It", self.linkManagerAction)
         self.iface.removePluginMenu("&Link It", self.helpAction)
-        self.iface.removeToolBarIcon(self.connectLayerAction)
 
-    def connectLayerDialog(self):
-        if ConnectLayerDialog().exec_():
-            self.connect()
-        
-    def connect(self):
-        layerid = self.settings.value("layer")
-        layer = QgsMapLayerRegistry.instance().mapLayer(layerid)
-        if layer is not None:
-            self.linker = Linker(self.iface, layer)
-            layer.browserCurrentItem.connect(self.linker.itemChanged)
-            layer.browserNoItem.connect(self.linker.clear)
-            layer.layerDeleted.connect(self.linker.unload)
+    def linkManagerDialog(self):
+        LinkManagerDialog().exec_()
 
-            self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.linker)
+    def createActions(self):
+        for layer in QgsMapLayerRegistry.instance().mapLayers().values():
+            link = getLink(layer)
+            if link.check():
+                link.createAction()
+
+    def linkit(self, destinationLayerId, destinationField, sourceLayerId, featureId):
+        destinationLayer = QgsMapLayerRegistry.instance().mapLayer(destinationLayerId)
+        if destinationLayer is None:
+            return
+        sourceLayer = QgsMapLayerRegistry.instance().mapLayer(sourceLayerId)
+        if sourceLayer is None:
+            return
+        f = QgsFeature()
+        if destinationLayer.getFeatures(QgsFeatureRequest().setFilterFid(featureId).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(f) is False:
+            return
+        self.linkerDock = LinkerDock(self.iface.mapCanvas(), destinationLayer, destinationField, sourceLayer, f)
+        self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.linkerDock)
+        destinationLayer.layerDeleted.connect(lambda: self.iface.removeDockWidget(self.linkerDock))
