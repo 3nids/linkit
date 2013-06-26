@@ -41,11 +41,12 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.sourceLayer = sourceLayer
         self.feature = feature
         self.mapCanvas = mapCanvas
+        self.rubber = QgsRubberBand(mapCanvas)
 
         QDockWidget.__init__(self)
         self.setupUi(self)
+        self.drawButton.setCheckable(True)
         SettingDialog.__init__(self, MySettings(), False, True)
-
         self.cancelButton.hide()
         
         self.cancelButton.setIcon(QIcon(":/plugins/linkit/icons/cancel.svg"))
@@ -53,13 +54,9 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.drawButton.setIcon(QIcon(":/plugins/linkit/icons/drawline.svg"))
         self.selectButton.setIcon(QIcon(":/plugins/linkit/icons/maptool.svg"))
 
-        self.drawButton.setCheckable(True)
-
         self.featureIdLabel.setText(str(feature.id()))
         currentValue = feature[destinationField]
         self.linkedItemID.setText("%s" % currentValue)
-
-        self.rubber = QgsRubberBand(mapCanvas)
 
     def closeEvent(self, e):
         self.rubber.reset()
@@ -98,6 +95,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         new = self.castFeatureId(new)
         fldIdx = self.destinationProvider.fieldNameIndex(self.destinationField)
         self.destinationProvider.changeAttributeValues({self.feature.id(): {fldIdx: new}})
+        self.drawLink(self.drawButton.isChecked())
         self.mapCanvas.refresh()
 
     def featureIdentified(self, new):
@@ -113,6 +111,8 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
             # centroid of source feature
             f = QgsFeature()
             srcId = self.castFeatureId(self.linkedItemID.text())
+            if srcId is None:
+                return
             if self.sourceLayer.getFeatures(QgsFeatureRequest().setFilterFid(srcId)).nextFeature(f) is False:
                 return
             p2 = centroid(f)
