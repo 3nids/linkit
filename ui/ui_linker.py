@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui_linker.ui'
 #
-# Created: Wed Jun 26 10:17:28 2013
+# Created: Wed Jun 26 14:22:15 2013
 #      by: PyQt4 UI code generator 4.9.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -17,25 +17,27 @@ except AttributeError:
 class Ui_linker(object):
     def setupUi(self, linker):
         linker.setObjectName(_fromUtf8("linker"))
-        linker.resize(218, 143)
+        linker.resize(242, 140)
         self.dockWidgetContents = QtGui.QWidget()
         self.dockWidgetContents.setObjectName(_fromUtf8("dockWidgetContents"))
-        self.formLayout = QtGui.QFormLayout(self.dockWidgetContents)
-        self.formLayout.setObjectName(_fromUtf8("formLayout"))
-        self.label = QtGui.QLabel(self.dockWidgetContents)
-        self.label.setObjectName(_fromUtf8("label"))
-        self.formLayout.setWidget(0, QtGui.QFormLayout.LabelRole, self.label)
-        self.featureIdLabel = QtGui.QLabel(self.dockWidgetContents)
-        self.featureIdLabel.setText(_fromUtf8(""))
-        self.featureIdLabel.setObjectName(_fromUtf8("featureIdLabel"))
-        self.formLayout.setWidget(0, QtGui.QFormLayout.FieldRole, self.featureIdLabel)
-        self.label_2 = QtGui.QLabel(self.dockWidgetContents)
+        self.gridLayout_3 = QtGui.QGridLayout(self.dockWidgetContents)
+        self.gridLayout_3.setSpacing(3)
+        self.gridLayout_3.setContentsMargins(0, 3, 3, 3)
+        self.gridLayout_3.setObjectName(_fromUtf8("gridLayout_3"))
+        self.frame = QtGui.QFrame(self.dockWidgetContents)
+        self.frame.setFrameShape(QtGui.QFrame.StyledPanel)
+        self.frame.setFrameShadow(QtGui.QFrame.Raised)
+        self.frame.setObjectName(_fromUtf8("frame"))
+        self.gridLayout_2 = QtGui.QGridLayout(self.frame)
+        self.gridLayout_2.setMargin(3)
+        self.gridLayout_2.setObjectName(_fromUtf8("gridLayout_2"))
+        self.label_2 = QtGui.QLabel(self.frame)
         self.label_2.setObjectName(_fromUtf8("label_2"))
-        self.formLayout.setWidget(1, QtGui.QFormLayout.LabelRole, self.label_2)
-        self.linkedItemID = QtGui.QLineEdit(self.dockWidgetContents)
-        self.linkedItemID.setObjectName(_fromUtf8("linkedItemID"))
-        self.formLayout.setWidget(1, QtGui.QFormLayout.FieldRole, self.linkedItemID)
-        self.widget = QtGui.QWidget(self.dockWidgetContents)
+        self.gridLayout_2.addWidget(self.label_2, 2, 0, 1, 1)
+        self.label = QtGui.QLabel(self.frame)
+        self.label.setObjectName(_fromUtf8("label"))
+        self.gridLayout_2.addWidget(self.label, 0, 0, 1, 1)
+        self.widget = QtGui.QWidget(self.frame)
         self.widget.setObjectName(_fromUtf8("widget"))
         self.gridLayout = QtGui.QGridLayout(self.widget)
         self.gridLayout.setMargin(0)
@@ -66,7 +68,17 @@ class Ui_linker(object):
         self.gridLayout.addWidget(self.selectButton, 0, 3, 1, 1)
         spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.gridLayout.addItem(spacerItem, 0, 1, 1, 1)
-        self.formLayout.setWidget(2, QtGui.QFormLayout.SpanningRole, self.widget)
+        self.gridLayout_2.addWidget(self.widget, 3, 0, 1, 3)
+        self.linkedItemID = QtGui.QLineEdit(self.frame)
+        self.linkedItemID.setObjectName(_fromUtf8("linkedItemID"))
+        self.gridLayout_2.addWidget(self.linkedItemID, 2, 1, 1, 2)
+        self.featureIdLabel = QtGui.QLabel(self.frame)
+        self.featureIdLabel.setText(_fromUtf8(""))
+        self.featureIdLabel.setObjectName(_fromUtf8("featureIdLabel"))
+        self.gridLayout_2.addWidget(self.featureIdLabel, 0, 1, 1, 2)
+        self.gridLayout_3.addWidget(self.frame, 0, 0, 2, 2)
+        spacerItem1 = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
+        self.gridLayout_3.addItem(spacerItem1, 2, 0, 1, 1)
         linker.setWidget(self.dockWidgetContents)
 
         self.retranslateUi(linker)
@@ -74,8 +86,8 @@ class Ui_linker(object):
 
     def retranslateUi(self, linker):
         linker.setWindowTitle(QtGui.QApplication.translate("linker", "Link It", None, QtGui.QApplication.UnicodeUTF8))
-        self.label.setText(QtGui.QApplication.translate("linker", "Feature ID", None, QtGui.QApplication.UnicodeUTF8))
         self.label_2.setText(QtGui.QApplication.translate("linker", "Linked ID", None, QtGui.QApplication.UnicodeUTF8))
+        self.label.setText(QtGui.QApplication.translate("linker", "Feature ID", None, QtGui.QApplication.UnicodeUTF8))
         self.cancelButton.setText(QtGui.QApplication.translate("linker", "Cancel", None, QtGui.QApplication.UnicodeUTF8))
         self.drawButton.setText(QtGui.QApplication.translate("linker", "Draw line", None, QtGui.QApplication.UnicodeUTF8))
         self.deleteButton.setText(QtGui.QApplication.translate("linker", "Delete", None, QtGui.QApplication.UnicodeUTF8))

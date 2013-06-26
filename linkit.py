@@ -54,7 +54,7 @@ class LinkIt():
         if sourceLayer is None:
             return
         f = QgsFeature()
-        if destinationLayer.getFeatures(QgsFeatureRequest().setFilterFid(featureId).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(f) is False:
+        if destinationLayer.getFeatures(QgsFeatureRequest().setFilterFid(featureId)).nextFeature(f) is False:
             return
         self.linkerDock = LinkerDock(self.iface.mapCanvas(), destinationLayer, destinationField, sourceLayer, f)
         self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.linkerDock)

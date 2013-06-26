@@ -17,9 +17,9 @@ class LinkEditorDialog(QDialog, Ui_LinkEditor):
         QDialog.__init__(self)
         self.setupUi(self)
 
-        self.destinationLayerCombo = VectorLayerCombo(self.destinationLayer)
+        self.destinationLayerCombo = VectorLayerCombo(self.destinationLayer, "", {"hasGeometry": True})
         self.destinationFieldCombo = FieldCombo(self.destinationField, self.destinationLayerCombo)
-        self.sourceLayerCombo = VectorLayerCombo(self.sourceLayer)
+        self.sourceLayerCombo = VectorLayerCombo(self.sourceLayer, "", {"hasGeometry": True})
 
         if link is not None:
             self.linkName.setText(link.name)
