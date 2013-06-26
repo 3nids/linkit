@@ -25,8 +25,7 @@ class LinkManagerDialog(QDialog, Ui_LinkManager):
         QDialog.__init__(self)
         self.setupUi(self)
 
-        icon = QIcon(":/plugins/linkit/icons/plus.png")
-        self.addButton.setIcon(icon)
+        self.addButton.setIcon(QIcon(":/plugins/linkit/icons/plus.png"))
         self.removeButton.setIcon(QIcon(":/plugins/linkit/icons/minus.png"))
         self.editButton.setIcon(QIcon(":/plugins/linkit/icons/edit.png"))
 

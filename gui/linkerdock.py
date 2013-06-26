@@ -7,7 +7,7 @@ QGIS module
 """
 
 from PyQt4.QtCore import pyqtSlot
-from PyQt4.QtGui import QDockWidget
+from PyQt4.QtGui import QDockWidget, QIcon
 
 from ..ui.ui_linker import Ui_linker
 from maptoolgetfeature import MapToolGetFeature
@@ -24,10 +24,15 @@ class LinkerDock(QDockWidget, Ui_linker):
         QDockWidget.__init__(self)
         self.setupUi(self)
         self.cancelButton.hide()
+        
+        self.cancelButton.setIcon(QIcon(":/plugins/linkit/icons/cancel.svg"))
+        self.deleteButton.setIcon(QIcon(":/plugins/linkit/icons/delete.svg"))
+        self.drawButton.setIcon(QIcon(":/plugins/linkit/icons/drawline.svg"))
+        self.selectButton.setIcon(QIcon(":/plugins/linkit/icons/maptool.svg"))
 
         currentValue = feature[destinationField]
         self.linkedItemID.setText("%s" % currentValue)
-
+        
     def clear(self):
         self.setEnabled(False)
         self.fid = False

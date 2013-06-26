@@ -6,36 +6,26 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>205</width>
-    <height>101</height>
+    <width>218</width>
+    <height>143</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Link It</string>
   </property>
   <widget class="QWidget" name="dockWidgetContents">
-   <layout class="QGridLayout" name="gridLayout_3">
-    <item row="1" column="2" colspan="2">
-     <widget class="QLineEdit" name="linkedItemID"/>
-    </item>
-    <item row="2" column="2">
-     <widget class="QToolButton" name="selectButton">
+   <layout class="QFormLayout" name="formLayout">
+    <item row="0" column="0">
+     <widget class="QLabel" name="label">
       <property name="text">
-       <string>Select</string>
+       <string>Feature ID</string>
       </property>
      </widget>
     </item>
-    <item row="2" column="0">
-     <widget class="QToolButton" name="deleteButton">
+    <item row="0" column="1">
+     <widget class="QLabel" name="featureIdLabel">
       <property name="text">
-       <string>Delete</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="3">
-     <widget class="QToolButton" name="cancelButton">
-      <property name="text">
-       <string>Cancel</string>
+       <string/>
       </property>
      </widget>
     </item>
@@ -44,6 +34,72 @@
       <property name="text">
        <string>Linked ID</string>
       </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLineEdit" name="linkedItemID"/>
+    </item>
+    <item row="2" column="0" colspan="2">
+     <widget class="QWidget" name="widget" native="true">
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="4">
+        <widget class="QToolButton" name="cancelButton">
+         <property name="text">
+          <string>Cancel</string>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>../icons/cancel.svg</normaloff>../icons/cancel.svg</iconset>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QToolButton" name="drawButton">
+         <property name="text">
+          <string>Draw line</string>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>../icons/drawline.svg</normaloff>../icons/drawline.svg</iconset>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QToolButton" name="deleteButton">
+         <property name="text">
+          <string>Delete</string>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>../icons/delete.svg</normaloff>../icons/delete.svg</iconset>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="3">
+        <widget class="QToolButton" name="selectButton">
+         <property name="text">
+          <string>Select</string>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>../icons/maptool.svg</normaloff>../icons/maptool.svg</iconset>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
      </widget>
     </item>
    </layout>
