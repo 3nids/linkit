@@ -30,7 +30,7 @@ class LinkIt():
         self.iface.addPluginToMenu("&Link It", self.linkManagerAction)
         # help
         self.helpAction = QAction(QIcon(":/plugins/linkit/icons/help.png"), "Help", self.iface.mainWindow())
-        self.helpAction.triggered.connect(lambda: QDesktopServices().openUrl(QUrl("https://github.com/3nids/linkit/wiki")))
+        self.helpAction.triggered.connect(lambda: QDesktopServices().openUrl(QUrl("http://3nids.github.io/linkit")))
         self.iface.addPluginToMenu("&Link It", self.helpAction)
                   
     def unload(self):
