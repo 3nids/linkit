@@ -2,23 +2,24 @@
 
 Link It is a [QGIS](http://www.qgis.org) plugin to link a feature to another. 
 
-The idea is to copy in a user-defined field the ID of a feature by clicking on it.
+The idea is to copy in a chosen field the ID of a feature by clicking on it.
 
 ## How ?
 
-A demo is visible on [youtube](http://www.youtube.com/v/8xgUjK0MJcM&hd=1).
+A demo is visible on [youtube](http://www.youtube.com/watch?v=wNfiNvlhNvo&hd=1).
 
-This plugin **requires** the [Item Browser](http://plugins.qgis.org/plugins/itembrowser/) to work.
+1. First, create a link in the _links manager_. Be aware, that only one link per layer can be created.
+2. A corresponding feature action is available for the destination layer
+3. Select this action, then choose a feature
+4. A dock appears on the left
+5. Click on the arrow icon and select the desired feature on map
+6. You can delete this link using the corresponding icon
+7. The plugin can also draw the link by activating the arrow icon
 
-1. First, activate both plugings (_Link It_ and _Item Browser_);
-2. Connect required layer in _Item Browser_;
-3. Connect the same layer in _Link It_ and specify the field where the feature ID will be written;
-4. Select a feature on map;
-5. In the _Link It_ dialog, click on select, then click on the feature you want to copy its ID.
 
 ## Tip
 
-If you want to have a layer drawing a nice arrow from one feature (child) to another (parent), here you go.
+If you want to have a postgis layer drawing a nice arrow from one feature (child) to another (parent), here you go.
 Just change the values between underscores. 
 
 	CREATE OR REPLACE VIEW _schema_._view_name_ AS
@@ -50,30 +51,4 @@ Just change the values between underscores.
 				WHERE a.id_parent IS NOT NULL
 			) AS foo
 		) AS foo2;
-
-## Changelog
-
-**2.0** 11.02.2013
-
-* Now uses the mapToolIdentify class
-* Returns the closest results if several found (Qgis < 1.9)
-* Updated for Qgis >=1.9
-
-**1.1.1** 16.04.2012
-
-* Fix version number in __init__
-
-**1.1.0** 12.04.2012
-
-* Added plugin icon
-
-**1.0.2** 02.04.2012
-
-* Unload correctly
-* Fix metadata short description
-
-**1.0.1** 29.03.2012
-
-* Added help to menu
-
 
