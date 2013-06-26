@@ -39,7 +39,7 @@ class Ui_linker(object):
         self.cancelButton.setObjectName(_fromUtf8("cancelButton"))
         self.gridLayout_3.addWidget(self.cancelButton, 2, 3, 1, 1)
         self.label_2 = QtGui.QLabel(self.dockWidgetContents)
-        self.label_2.setText(QtGui.QApplication.translate("linker", "Item ID", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_2.setText(QtGui.QApplication.translate("linker", "Linked ID", None, QtGui.QApplication.UnicodeUTF8))
         self.label_2.setObjectName(_fromUtf8("label_2"))
         self.gridLayout_3.addWidget(self.label_2, 1, 0, 1, 1)
         linker.setWidget(self.dockWidgetContents)
