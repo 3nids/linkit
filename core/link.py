@@ -32,16 +32,15 @@ class Link():
         self.createAction()
 
     def createAction(self):
-
         actionStr = "qgis.utils.plugins['linkit'].linkit('%s','%s','%s', [%% $id %%])" % (self.destinationLayer.id(),
                                                                                           self.destinationField,
                                                                                           self.sourceLayer.id())
         self.deleteAction()
-        actions = self.sourceLayer.actions()
+        actions = self.destinationLayer.actions()
         actions.addAction(QgsAction.GenericPython, self.name, actionStr)
 
     def deleteAction(self):
-        actions = self.sourceLayer.actions()
+        actions = self.destinationLayer.actions()
         while True:
             i = 0
             while i < actions.size():
