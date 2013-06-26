@@ -57,12 +57,14 @@ class LinkerDock(QDockWidget, Ui_linker):
 
     @pyqtSlot(str, name="on_linkedItemID_textChanged")
     def on_linkedItemID_textChanged(self, new):
-        if new == 0:
+        try:
+            new = long(new)
+        except ValueError:
             new = None
         fldIdx = self.destinationProvider.fieldNameIndex(self.destinationField)
         self.destinationProvider.changeAttributeValues({self.featureId: {fldIdx: new}})
         self.mapCanvas.refresh()
 
     def featureIdentified(self, new):
-        self.linkedItemID.setText("%u" % new)
+        self.linkedItemID.setText("%s" % new)
         self.unsetMapTool()
