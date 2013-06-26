@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Linkit by 3nids</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/main.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <header>
+        <h1>Linkit</h1>
+        <p>A QGIS plugin to link a feature to another. By clicking on map, the plugin will then automatically save the feature's ID in the appropriate field defined by the user. [This plugin requires ItemBrowser]</p>
+      </header>
+
+      <div id="banner">
+        <span id="logo"></span>
+
+        <a href="https://github.com/3nids/linkit" class="button fork"><strong>View On GitHub</strong></a>
+        <div class="downloads">
+          <span>Downloads:</span>
+          <ul>
+            <li><a href="https://github.com/3nids/linkit/zipball/master" class="button">ZIP</a></li>
+            <li><a href="https://github.com/3nids/linkit/tarball/master" class="button">TAR</a></li>
+          </ul>
+        </div>
+      </div><!-- end banner -->
+
+    <div class="wrapper">
+      <nav>
+        <ul></ul>
+      </nav>
+      <section>
+        <h2>
+<a name="what-" class="anchor" href="#what-"><span class="octicon octicon-link"></span></a>What ?</h2>
+
+<p>Link It is a <a href="http://www.qgis.org">QGIS</a> plugin to link a feature to another. </p>
+
+<p>The idea is to copy in a chosen field the ID of a feature by clicking on it.</p>
+
+<h2>
+<a name="how-" class="anchor" href="#how-"><span class="octicon octicon-link"></span></a>How ?</h2>
+
+<p>A demo is visible on <a href="http://www.youtube.com/watch?v=wNfiNvlhNvo&amp;hd=1">youtube</a>.</p>
+
+<ol>
+<li>First, create a link in the <em>links manager</em>. Be aware, that only one link per layer can be created.</li>
+<li>A corresponding feature action is available for the destination layer</li>
+<li>Select this action, then choose a feature</li>
+<li>A dock appears on the left</li>
+<li>Click on the arrow icon and select the desired feature on map</li>
+<li>You can delete this link using the corresponding icon</li>
+<li>The plugin can also draw the link by activating the arrow icon</li>
+</ol><h2>
+<a name="tip" class="anchor" href="#tip"><span class="octicon octicon-link"></span></a>Tip</h2>
+
+<p>If you want to have a postgis layer drawing a nice arrow from one feature (child) to another (parent), here you go.
+Just change the values between underscores. </p>
+
+<pre><code>CREATE OR REPLACE VIEW _schema_._view_name_ AS
+    SELECT child, parent,
+         ST_CurveToLine(ST_GeomFromEWKT('SRID=_YOURSRID_;CIRCULARSTRING('
+            ||ST_X(start_point)||' '||ST_Y(start_point)
+            ||','||
+            ST_X(middle_point)+distance*cos(azimuth)||' '||ST_Y(middle_point)+distance*sin(azimuth)
+            ||','||
+            ST_X(end_point)||' '||ST_Y(end_point) 
+            ||')'
+        ),15)::geometry(LineString,21781) AS wkb_geometry
+    FROM (
+        SELECT child,parent,
+            start_point , end_point ,
+            pi()/2+ST_Azimuth(start_point,end_point) AS azimuth,
+            .5*ST_Distance(start_point,end_point) AS distance,
+            ST_Line_Interpolate_Point(ST_MakeLine( start_point , end_point ),.5)::geometry(Point,21781) AS middle_point
+        FROM (
+            SELECT a.id AS child ,b.id AS parent, 
+                    ST_Line_Interpolate_Point(a.wkb_geometry,.5)::geometry(Point,21781) AS start_point,
+                    /* select end_point at 4 meters from the closest side of the pipe */
+                    ST_ClosestPoint(ST_MakeLine(  
+                        ST_Line_Interpolate_Point(b.wkb_geometry,   LEAST(1,  4/b._length2d/2))::geometry(Point,21781) ,
+                        ST_Line_Interpolate_Point(b.wkb_geometry,GREATEST(0,1-4/b._length2d/2))::geometry(Point,21781) 
+                    ),a.wkb_geometry) AS end_point
+            FROM _yourschema_._yourtable_ a 
+            INNER JOIN _yourschema_._yourtable_ b ON a._fieldOfParentID_ = b.id
+            WHERE a.id_parent IS NOT NULL
+        ) AS foo
+    ) AS foo2;
+</code></pre>
+      </section>
+      <footer>
+        <p>Project maintained by <a href="https://github.com/3nids">3nids</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
