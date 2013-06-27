@@ -1,5 +1,9 @@
 ## Changelog
 
+**3.0.1** 27.06.2013
+
+* Fix crash if some raster layer is loaded
+
 **3.0** 26.06.2013
 
 * Now create a feature action
