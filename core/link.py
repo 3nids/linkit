@@ -1,5 +1,5 @@
 
-from qgis.core import QgsMapLayerRegistry, QgsAction
+from qgis.core import QgsMapLayerRegistry, QgsAction, QgsMapLayer
 
 
 def getLink(layer):
@@ -17,7 +17,7 @@ class Link():
         self.sourceLayer = QgsMapLayerRegistry.instance().mapLayer(sourceLayer)
 
     def check(self):
-        if self.destinationLayer is None:
+        if self.destinationLayer is None or self.destinationLayer.type() != QgsMapLayer.VectorLayer:
             return False
         if self.destinationLayer.fieldNameIndex(self.destinationField) == -1:
             return False
