@@ -10,5 +10,6 @@
         <file>icons/maptool.svg</file>
         <file>icons/drawline.svg</file>
         <file>icons/delete.svg</file>
+        <file>icons/settings.svg</file>
     </qresource>
 </RCC>
