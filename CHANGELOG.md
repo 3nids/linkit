@@ -1,5 +1,12 @@
 ## Changelog
 
+**3.1** 02.09.2013
+
+* Dock position preference
+* Sort layers by name in links manager
+* User define style of drawn link
+* Added Makefile
+
 **3.0.1** 27.06.2013
 
 * Fix crash if some raster layer is loaded
