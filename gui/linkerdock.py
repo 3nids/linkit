@@ -6,7 +6,7 @@ Link It
 QGIS module
 """
 
-from PyQt4.QtCore import pyqtSlot
+from PyQt4.QtCore import pyqtSlot, Qt
 from PyQt4.QtGui import QDockWidget, QIcon
 from qgis.core import QgsFeature, QgsFeatureRequest, QgsPoint, QgsGeometry, QGis
 from qgis.gui import QgsRubberBand
@@ -41,6 +41,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.sourceLayer = sourceLayer
         self.feature = feature
         self.mapCanvas = mapCanvas
+        self.settings = MySettings()
         self.rubber = QgsRubberBand(mapCanvas)
 
         QDockWidget.__init__(self)
@@ -140,6 +141,9 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
             arc = [QgsPoint(vx[i], vy[i]) for i in range(len(vx))]
             geom = QgsGeometry().fromPolyline(arc)
             self.rubber.setToGeometry(geom, self.destinationLayer)
+            self.rubber.setWidth(self.settings.value("rubberWidth"))
+            self.rubber.setColor(self.settings.value("rubberColor"))
+            self.rubber.setLineStyle(Qt.DashLine)
 
 
 
