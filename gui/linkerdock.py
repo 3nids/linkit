@@ -54,7 +54,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.drawButton.setIcon(QIcon(":/plugins/linkit/icons/drawline.svg"))
         self.selectButton.setIcon(QIcon(":/plugins/linkit/icons/maptool.svg"))
 
-        self.featureIdLabel.setText(str(feature.id()))
+        self.featureIdLabel.setText("%u" % feature.id())
         currentValue = feature[destinationField]
         self.linkedItemID.setText("%s" % currentValue)
 
