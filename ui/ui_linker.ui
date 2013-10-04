@@ -120,7 +120,14 @@
         </widget>
        </item>
        <item row="2" column="1" colspan="2">
-        <widget class="QLineEdit" name="linkedItemID"/>
+        <widget class="QLineEdit" name="linkedItemID">
+         <property name="frame">
+          <bool>true</bool>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
        </item>
        <item row="0" column="1" colspan="2">
         <widget class="QLabel" name="featureIdLabel">
