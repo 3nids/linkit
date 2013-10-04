@@ -1,5 +1,9 @@
 ## Changelog
 
+**3.1.1** 03.10.2013
+
+* Set line edit as read-only to prevent unwanted modification
+
 **3.1** 02.09.2013
 
 * Dock position preference
