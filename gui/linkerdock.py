@@ -55,19 +55,18 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
 
         QDockWidget.__init__(self)
         self.setupUi(self)
-        self.unset()
+        self.enableUI()
         SettingDialog.__init__(self, MySettings(), False, True)
 
     def set(self, destinationLayer, destinationField, sourceLayer, feature):
+        self.disconnectLayers()
+
         self.destinationLayer = destinationLayer
-        self.destinationProvider = destinationLayer.dataProvider()
         self.destinationField = destinationField
         self.sourceLayer = sourceLayer
         self.feature = feature
 
-        self.setEnabled(True)
-        self.selectButton.show()
-        self.cancelButton.hide()
+        self.enableUI()
 
         self.linkRubber.reset()
         self.featureRubber.reset()
@@ -82,23 +81,51 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.featureIdLabel.setText("%u" % feature.id())
         currentValue = feature[destinationField]
         self.linkedItemID.setText("%s" % currentValue)
-        self.drawLink(self.drawButton.isChecked())
+        self.drawLink()
 
-        self.sourceLayer.layerDeleted.connect(self.unset)
-        self.destinationLayer.layerDeleted.connect(self.unset)
-        self.destinationLayer.layerDeleted.connect(self.hide)
+        self.sourceLayer.layerDeleted.connect(self.close)
+        self.destinationLayer.layerDeleted.connect(self.close)
+
+        self.destinationLayer.editingStarted.connect(self.enableUI)
+        self.destinationLayer.editingStopped.connect(self.enableUI)
+        self.destinationLayer.featureDeleted.connect(self.featureDeleted)
 
         self.show()
 
-    def unset(self):
-        self.setEnabled(False)
-        self.linkRubber.reset()
-        self.featureRubber.reset()
-        if self.mapTool is not None:
-            self.mapCanvas.unsetMapTool(self.mapTool)
+    def disconnectLayers(self):
+        try:
+            self.destinationLayer.layerDeleted.disconnect(self.close)
+            self.destinationLayer.editingStarted.disconnect(self.enableUI)
+            self.destinationLayer.editingStopped.disconnect(self.enableUI)
+        except:
+            pass
+        try:
+            self.sourceLayer.layerDeleted.disconnect(self.enableUI)
+        except:
+            pass
+
+    def enableUI(self):
+        self.mapCanvas.unsetMapTool(self.mapTool)
+        enable = False
+        if self.destinationLayer is not None and self.sourceLayer is not None:
+            if self.destinationLayer.isEditable():
+                enable = True
+        self.editButtonWidget.setEnabled(enable)
+        self.selectButton.show()
+        self.cancelButton.hide()
+
+    def featureDeleted(self, fid):
+        if self.feature is None:
+            return
+        if self.feature.id() == fid:
+            self.close()
 
     def closeEvent(self, e):
-        self.unset()
+        if self.mapTool is not None:
+            self.mapCanvas.unsetMapTool(self.mapTool)
+        self.linkRubber.reset()
+        self.featureRubber.reset()
+        self.disconnectLayers()
 
     @pyqtSlot(name="on_selectButton_clicked")
     def setMapTool(self):
@@ -120,10 +147,14 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.updateLink("")
 
     def updateLink(self, new):
-        new = self.castFeatureId(new)
-        fldIdx = self.destinationProvider.fieldNameIndex(self.destinationField)
-        self.destinationProvider.changeAttributeValues({self.feature.id(): {fldIdx: new}})
-        self.drawLink(self.drawButton.isChecked())
+        new = castFeatureId(new)
+        fldIdx = self.destinationLayer.fieldNameIndex(self.destinationField)
+        if self.destinationLayer.isEditable():
+            self.destinationLayer.editBuffer().changeAttributeValue(self.feature.id(), fldIdx, new)
+        else:
+            self.iface.messageBar().pushMessage("Link It", "Destination layer must be editable.",
+                                                QgsMessageBar.WARNING, 3)
+        self.drawLink()
 
     def featureIdentified(self, new):
         self.linkedItemID.setText("%s" % new)
@@ -131,9 +162,11 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.unsetMapTool()
 
     @pyqtSlot(bool, name="on_drawButton_toggled")
-    def drawLink(self, checked):
+    def drawLink(self, dummy=None):
         self.linkRubber.reset()
-        if self.isEnabled() and checked:
+        if self.destinationLayer is None or self.sourceLayer is None or self.feature is None:
+            return
+        if self.drawButton.isChecked():
             # centroid of destination feature
             p1 = centroid(self.feature)
             # centroid of source feature
