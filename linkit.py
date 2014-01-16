@@ -70,8 +70,5 @@ class LinkIt():
             return
         self.linkerDock.set(link.destinationLayer, link.destinationField, link.sourceLayer, f)
 
-        link.destinationLayer.layerDeleted.connect(self.linkerDock.unset)
-        link.destinationLayer.layerDeleted.connect(self.linkerDock.hide)
-
     def showSettings(self):
         MySettingsDialog().exec_()

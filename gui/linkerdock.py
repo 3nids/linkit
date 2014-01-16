@@ -49,7 +49,8 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.feature = None
         self.mapCanvas = mapCanvas
         self.settings = MySettings()
-        self.rubber = QgsRubberBand(mapCanvas)
+        self.linkRubber = QgsRubberBand(mapCanvas)
+        self.featureRubber = QgsRubberBand(mapCanvas)
         self.mapTool = None
 
         QDockWidget.__init__(self)
@@ -68,7 +69,8 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.selectButton.show()
         self.cancelButton.hide()
 
-        self.rubber.reset()
+        self.linkRubber.reset()
+        self.featureRubber.reset()
         if self.mapTool is not None:
             self.mapCanvas.unsetMapTool(self.mapTool)
         
@@ -82,11 +84,16 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.linkedItemID.setText("%s" % currentValue)
         self.drawLink(self.drawButton.isChecked())
 
+        self.sourceLayer.layerDeleted.connect(self.unset)
+        self.destinationLayer.layerDeleted.connect(self.unset)
+        self.destinationLayer.layerDeleted.connect(self.hide)
+
         self.show()
 
     def unset(self):
         self.setEnabled(False)
-        self.rubber.reset()
+        self.linkRubber.reset()
+        self.featureRubber.reset()
         if self.mapTool is not None:
             self.mapCanvas.unsetMapTool(self.mapTool)
 
@@ -125,7 +132,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
 
     @pyqtSlot(bool, name="on_drawButton_toggled")
     def drawLink(self, checked):
-        self.rubber.reset()
+        self.linkRubber.reset()
         if self.isEnabled() and checked:
             # centroid of destination feature
             p1 = centroid(self.feature)
@@ -160,11 +167,10 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
             vy = [cp.y()+r*cos(az*pi/180) for az in floatrange(az1, az2, 5)]
             arc = [QgsPoint(vx[i], vy[i]) for i in range(len(vx))]
             geom = QgsGeometry().fromPolyline(arc)
-            self.rubber.setToGeometry(geom, self.destinationLayer)
-            self.rubber.setWidth(self.settings.value("rubberWidth"))
-            self.rubber.setColor(self.settings.value("rubberColor"))
-            self.rubber.setLineStyle(Qt.DashLine)
-
+            self.linkRubber.setToGeometry(geom, self.destinationLayer)
+            self.linkRubber.setWidth(self.settings.value("rubberWidth"))
+            self.linkRubber.setColor(self.settings.value("rubberColor"))
+            self.linkRubber.setLineStyle(Qt.DashLine)
 
             self.mapCanvas.refresh()
 
