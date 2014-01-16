@@ -23,7 +23,7 @@ import resources
 class LinkIt():
     def __init__(self, iface):
         self.iface = iface
-        self.linkerDock = LinkerDock(iface.mapCanvas())
+        self.linkerDock = LinkerDock(iface)
         if MySettings().value("dockArea") == 1:
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.linkerDock)
         else:
@@ -62,13 +62,7 @@ class LinkIt():
                 link.createAction()
 
     def linkit(self, destinationLayerId, destinationField, sourceLayerId, featureId):
-        link = Link(None, destinationLayerId, destinationField, sourceLayerId)
-        if not link.check():
-            return
-        f = QgsFeature()
-        if link.destinationLayer.getFeatures(QgsFeatureRequest().setFilterFid(featureId)).nextFeature(f) is False:
-            return
-        self.linkerDock.set(link.destinationLayer, link.destinationField, link.sourceLayer, f)
+        self.linkerDock.set(destinationLayerId, destinationField, sourceLayerId, featureId)
 
     def showSettings(self):
         MySettingsDialog().exec_()
