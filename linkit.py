@@ -68,8 +68,9 @@ class LinkIt():
         f = QgsFeature()
         if link.destinationLayer.getFeatures(QgsFeatureRequest().setFilterFid(featureId)).nextFeature(f) is False:
             return
-        self.linkerDock.init(link.destinationLayer, link.destinationField, link.sourceLayer, f)
+        self.linkerDock.set(link.destinationLayer, link.destinationField, link.sourceLayer, f)
 
+        link.destinationLayer.layerDeleted.connect(self.linkerDock.unset)
         link.destinationLayer.layerDeleted.connect(self.linkerDock.hide)
 
     def showSettings(self):

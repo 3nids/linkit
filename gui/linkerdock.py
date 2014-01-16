@@ -33,6 +33,13 @@ def centroid(feature):
         return geom.centroid().asPoint()
 
 
+def castFeatureId(text):
+    try:
+        return long(text)
+    except ValueError:
+        return None
+
+
 class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
     def __init__(self, mapCanvas):
         self.destinationLayer = None
@@ -47,15 +54,17 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
 
         QDockWidget.__init__(self)
         self.setupUi(self)
+        self.unset()
         SettingDialog.__init__(self, MySettings(), False, True)
 
-    def init(self, destinationLayer, destinationField, sourceLayer, feature):
+    def set(self, destinationLayer, destinationField, sourceLayer, feature):
         self.destinationLayer = destinationLayer
         self.destinationProvider = destinationLayer.dataProvider()
         self.destinationField = destinationField
         self.sourceLayer = sourceLayer
         self.feature = feature
 
+        self.setEnabled(True)
         self.selectButton.show()
         self.cancelButton.hide()
 
@@ -71,18 +80,18 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.featureIdLabel.setText("%u" % feature.id())
         currentValue = feature[destinationField]
         self.linkedItemID.setText("%s" % currentValue)
+        self.drawLink(self.drawButton.isChecked())
 
         self.show()
 
-    def closeEvent(self, e):
+    def unset(self):
+        self.setEnabled(False)
         self.rubber.reset()
         if self.mapTool is not None:
             self.mapCanvas.unsetMapTool(self.mapTool)
 
-    def clear(self):
-        self.setEnabled(False)
-        self.fid = False
-        self.linkedItemID.clear()
+    def closeEvent(self, e):
+        self.unset()
 
     @pyqtSlot(name="on_selectButton_clicked")
     def setMapTool(self):
@@ -101,34 +110,28 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
     @pyqtSlot(name="on_deleteButton_clicked")
     def deleteLink(self):
         self.linkedItemID.clear()
+        self.updateLink("")
 
-    def castFeatureId(self, text):
-        try:
-            return long(text)
-        except ValueError:
-            return None
-
-    @pyqtSlot(str, name="on_linkedItemID_textChanged")
     def updateLink(self, new):
         new = self.castFeatureId(new)
         fldIdx = self.destinationProvider.fieldNameIndex(self.destinationField)
         self.destinationProvider.changeAttributeValues({self.feature.id(): {fldIdx: new}})
         self.drawLink(self.drawButton.isChecked())
-        self.mapCanvas.refresh()
 
     def featureIdentified(self, new):
         self.linkedItemID.setText("%s" % new)
+        self.updateLink(new)
         self.unsetMapTool()
 
     @pyqtSlot(bool, name="on_drawButton_toggled")
     def drawLink(self, checked):
         self.rubber.reset()
-        if checked:
+        if self.isEnabled() and checked:
             # centroid of destination feature
             p1 = centroid(self.feature)
             # centroid of source feature
             f = QgsFeature()
-            srcId = self.castFeatureId(self.linkedItemID.text())
+            srcId = castFeatureId(self.linkedItemID.text())
             if srcId is None:
                 return
             if self.sourceLayer.getFeatures(QgsFeatureRequest().setFilterFid(srcId)).nextFeature(f) is False:
@@ -142,7 +145,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
             az = (p1.azimuth(p2)+90)*pi/180
             # create point distant to segment of offset of segment length, will be center of circular arc
             # offset should be  0 < offset < 1
-            offset = 1/6
+            offset = 1/12
             cp = QgsPoint(mp.x()+d*offset*sin(az),
                           mp.y()+d*offset*cos(az))
             # radius
@@ -161,6 +164,9 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
             self.rubber.setWidth(self.settings.value("rubberWidth"))
             self.rubber.setColor(self.settings.value("rubberColor"))
             self.rubber.setLineStyle(Qt.DashLine)
+
+
+            self.mapCanvas.refresh()
 
 
 
