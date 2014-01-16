@@ -12,7 +12,7 @@ from PyQt4.QtGui import QIcon, QAction, QDesktopServices
 from qgis.core import QgsMapLayerRegistry, QgsFeature, QgsFeatureRequest, QgsProject
 
 from core.mysettings import MySettings
-from core.link import getLink
+from core.link import Link, getLink
 from gui.linkmanagerdialog import LinkManagerDialog
 from gui.linkerdock import LinkerDock
 from gui.mysettingsdialog import MySettingsDialog
@@ -23,6 +23,12 @@ import resources
 class LinkIt():
     def __init__(self, iface):
         self.iface = iface
+        self.linkerDock = LinkerDock(iface.mapCanvas())
+        if MySettings().value("dockArea") == 1:
+            self.iface.addDockWidget(Qt.RightDockWidgetArea, self.linkerDock)
+        else:
+            self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.linkerDock)
+        self.linkerDock.hide()
 
     def initGui(self):
         QgsProject.instance().readProject.connect(self.createActions)
@@ -44,6 +50,7 @@ class LinkIt():
         self.iface.removePluginMenu("&Link It", self.linkManagerAction)
         self.iface.removePluginMenu("&Link It", self.settingsAction)
         self.iface.removePluginMenu("&Link It", self.helpAction)
+        self.iface.removeDockWidget(self.linkerDock)
 
     def linkManagerDialog(self):
         LinkManagerDialog().exec_()
@@ -55,21 +62,15 @@ class LinkIt():
                 link.createAction()
 
     def linkit(self, destinationLayerId, destinationField, sourceLayerId, featureId):
-        destinationLayer = QgsMapLayerRegistry.instance().mapLayer(destinationLayerId)
-        if destinationLayer is None:
-            return
-        sourceLayer = QgsMapLayerRegistry.instance().mapLayer(sourceLayerId)
-        if sourceLayer is None:
+        link = Link(None, destinationLayerId, destinationField, sourceLayerId)
+        if not link.check():
             return
         f = QgsFeature()
-        if destinationLayer.getFeatures(QgsFeatureRequest().setFilterFid(featureId)).nextFeature(f) is False:
+        if link.destinationLayer.getFeatures(QgsFeatureRequest().setFilterFid(featureId)).nextFeature(f) is False:
             return
-        self.linkerDock = LinkerDock(self.iface.mapCanvas(), destinationLayer, destinationField, sourceLayer, f)
-        if MySettings().value("dockArea") == 1:
-            self.iface.addDockWidget(Qt.RightDockWidgetArea, self.linkerDock)
-        else:
-            self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.linkerDock)
-        destinationLayer.layerDeleted.connect(lambda: self.iface.removeDockWidget(self.linkerDock))
+        self.linkerDock.init(link.destinationLayer, link.destinationField, link.sourceLayer, f)
+
+        link.destinationLayer.layerDeleted.connect(self.linkerDock.hide)
 
     def showSettings(self):
         MySettingsDialog().exec_()

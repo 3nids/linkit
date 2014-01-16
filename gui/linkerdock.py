@@ -34,21 +34,34 @@ def centroid(feature):
 
 
 class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
-    def __init__(self, mapCanvas, destinationLayer, destinationField, sourceLayer, feature):
+    def __init__(self, mapCanvas):
+        self.destinationLayer = None
+        self.destinationProvider = None
+        self.destinationField = None
+        self.sourceLayer = None
+        self.feature = None
+        self.mapCanvas = mapCanvas
+        self.settings = MySettings()
+        self.rubber = QgsRubberBand(mapCanvas)
+        self.mapTool = None
+
+        QDockWidget.__init__(self)
+        self.setupUi(self)
+        SettingDialog.__init__(self, MySettings(), False, True)
+
+    def init(self, destinationLayer, destinationField, sourceLayer, feature):
         self.destinationLayer = destinationLayer
         self.destinationProvider = destinationLayer.dataProvider()
         self.destinationField = destinationField
         self.sourceLayer = sourceLayer
         self.feature = feature
-        self.mapCanvas = mapCanvas
-        self.settings = MySettings()
-        self.rubber = QgsRubberBand(mapCanvas)
 
-        QDockWidget.__init__(self)
-        self.setupUi(self)
-        self.drawButton.setCheckable(True)
-        SettingDialog.__init__(self, MySettings(), False, True)
+        self.selectButton.show()
         self.cancelButton.hide()
+
+        self.rubber.reset()
+        if self.mapTool is not None:
+            self.mapCanvas.unsetMapTool(self.mapTool)
         
         self.cancelButton.setIcon(QIcon(":/plugins/linkit/icons/cancel.svg"))
         self.deleteButton.setIcon(QIcon(":/plugins/linkit/icons/delete.svg"))
@@ -59,8 +72,12 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         currentValue = feature[destinationField]
         self.linkedItemID.setText("%s" % currentValue)
 
+        self.show()
+
     def closeEvent(self, e):
         self.rubber.reset()
+        if self.mapTool is not None:
+            self.mapCanvas.unsetMapTool(self.mapTool)
 
     def clear(self):
         self.setEnabled(False)

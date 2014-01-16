@@ -79,6 +79,9 @@
              <iconset>
               <normaloff>../icons/drawline.svg</normaloff>../icons/drawline.svg</iconset>
             </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
           <item row="0" column="2">
