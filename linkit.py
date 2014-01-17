@@ -31,7 +31,9 @@ class LinkIt():
         self.linkerDock.hide()
 
     def initGui(self):
-        QgsProject.instance().readProject.connect(self.createActions)
+        self.iface.projectRead.connect(self.createActions)
+        self.iface.newProjectCreated.connect(self.createActions)
+
         # connect layer
         self.linkManagerAction = QAction(QIcon(":/plugins/linkit/icons/connect.png"), "Links manager", self.iface.mainWindow())
         self.linkManagerAction.triggered.connect(self.linkManagerDialog)
@@ -56,6 +58,7 @@ class LinkIt():
         LinkManagerDialog().exec_()
 
     def createActions(self):
+        self.linkerDock.disconnectLayers()
         for layer in QgsMapLayerRegistry.instance().mapLayers().values():
             link = getLink(layer)
             if link.check():
