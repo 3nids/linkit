@@ -95,17 +95,18 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.show()
 
     def disconnectLayers(self):
-        pass
-        # try:
-        #     self.destinationLayer.layerDeleted.disconnect(self.close)
-        #     self.destinationLayer.editingStarted.disconnect(self.enableUI)
-        #     self.destinationLayer.editingStopped.disconnect(self.enableUI)
-        # except:
-        #     pass
-        # try:
-        #     self.sourceLayer.layerDeleted.disconnect(self.enableUI)
-        # except:
-        #     pass
+        try:
+            self.destinationLayer.layerDeleted.disconnect(self.close)
+            self.destinationLayer.editingStarted.disconnect(self.enableUI)
+            self.destinationLayer.editingStopped.disconnect(self.enableUI)
+            self.destinationLayer = None
+        except:
+            pass
+        try:
+            self.sourceLayer.layerDeleted.disconnect(self.enableUI)
+            self.sourceLayer = None
+        except:
+            pass
 
     def enableUI(self):
         self.mapCanvas.unsetMapTool(self.mapTool)
