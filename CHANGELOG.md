@@ -1,5 +1,11 @@
 ## Changelog
 
+**4.0** .01.2013
+
+* Use edit buffer insted of provider to write data
+* Can show and draw links while not editing
+* Handles feature deletion and layer removal
+
 **3.1.1** 03.10.2013
 
 * Set line edit as read-only to prevent unwanted modification

@@ -2,7 +2,7 @@
 [general]
 name=Link It
 description=Link It is a QGIS plugin to link a feature to another. The plugin creates a feature action on a layer, and running this action will show a UI to select the feature to link on the map.
-version=3.1.1
+version=4.0
 qgisMinimumVersion=2.0
 author=Denis Rouzaud
 email=denis.rouzaud@gmail.com
