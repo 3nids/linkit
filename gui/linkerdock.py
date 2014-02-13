@@ -214,7 +214,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         # centroid of source feature
         srcFeature = QgsFeature()
         srcId = dstFeature[self.destinationField]
-        if srcId is None:
+        if not srcId:
             return
         if self.sourceLayer.getFeatures(QgsFeatureRequest().setFilterFid(srcId)).nextFeature(srcFeature) is False:
             return
