@@ -1,6 +1,10 @@
 ## Changelog
 
-**4.0** .01.2013
+**4.0.1** 13.02.2014
+
+* fix case when field is null
+
+**4.0** 17.01.2014
 
 * Use edit buffer insted of provider to write data
 * Can show and draw links while not editing
