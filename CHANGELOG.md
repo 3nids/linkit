@@ -1,5 +1,9 @@
 ## Changelog
 
+**4.0.2** 20.02.2014
+
+* fix feature deletion
+
 **4.0.1** 13.02.2014
 
 * fix case when field is null
