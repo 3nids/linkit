@@ -153,7 +153,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         return True, feature
 
     def featureDeleted(self, fid):
-        if self.feature is None:
+        if self.featureId is None:
             return
         if self.featureId == fid:
             self.close()
