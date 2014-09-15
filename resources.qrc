@@ -2,6 +2,7 @@
     <qresource prefix="/plugins/linkit" >
         <file>icons/connect.png</file>
         <file>icons/linkit.png</file>
+        <file>icons/highlight.svg</file>
         <file>icons/help.png</file>
         <file>icons/plus.png</file>
         <file>icons/minus.png</file>

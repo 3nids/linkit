@@ -8,14 +8,13 @@ QGIS module
 
 from PyQt4.QtCore import pyqtSlot, Qt
 from PyQt4.QtGui import QDockWidget, QIcon
-from qgis.core import QgsFeature, QgsFeatureRequest, QgsPoint, QgsGeometry, QGis, QgsMapLayerRegistry
-from qgis.gui import QgsRubberBand, QgsMessageBar
+from qgis.core import QgsProject, QgsFeature, QgsFeatureRequest, QgsPoint, QgsGeometry, QGis, QgsMapLayerRegistry
+from qgis.gui import QgsRubberBand, QgsMessageBar, QgsRelationReferenceWidgetWrapper
 from math import pi, sqrt, sin, cos
 
-from ..qgissettingmanager import SettingDialog
-from ..core.mysettings import MySettings
-from ..ui.ui_linker import Ui_linker
-from maptoolgetfeature import MapToolGetFeature
+from linkit.qgissettingmanager import SettingDialog
+from linkit.core.mysettings import MySettings
+from linkit.ui.ui_linker import Ui_linker
 
 
 def floatrange(a, b, step):
@@ -42,58 +41,65 @@ def castFeatureId(text):
 
 class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
     def __init__(self, iface):
-        self.destinationLayer = None
-        self.destinationProvider = None
-        self.destinationField = None
-        self.sourceLayer = None
-        self.featureId = None
         self.iface = iface
-        self.mapCanvas = iface.mapCanvas()
         self.settings = MySettings()
         self.linkRubber = QgsRubberBand(self.mapCanvas)
         self.featureRubber = QgsRubberBand(self.mapCanvas)
         self.mapTool = None
 
+        self.relationManager = QgsProject.instance().relationManager()
+        self.relationManager.relationsLoaded.connect(self.loadRelations)
+        self.relation = None
+
+        self.relationWidgetWrapper = None
+
         QDockWidget.__init__(self)
         self.setupUi(self)
         SettingDialog.__init__(self, MySettings(), False, True)
 
-    def set(self, destinationLayerId, destinationField, sourceLayerId, featureId):
-        self.disconnectLayers()
+        self.relationComboBox.currentIndexChanged.connect(self.currentRelationChanged)
 
-        self.destinationLayer = QgsMapLayerRegistry.instance().mapLayer(destinationLayerId)
-        self.destinationField = destinationField
-        self.sourceLayer = QgsMapLayerRegistry.instance().mapLayer(sourceLayerId)
+    def loadRelations(self):
+        self.relation = None
+        self.relationComboBox.clear()
+        for relation in self.relationManager.referencedRelations():
+            if relation.referencingLayer.hasGeometryType():
+                self.relations.append(relation)
+                self.relationComboBox.addItem(relation.name(), relation.id())
 
-        self.featureIdLabel.setText("%u" % featureId)
-        self.featureId = featureId
+    def currentRelationChanged(self, index):
+        self.referencingFeatureLayout.setEnabled(index >= 0)
+        relationId = self.relationComboBox.itemData(index)
+        self.relation = self.relationManager.relation(relationId)
+        self.setReferencingFeature(QgsFeature())
 
-        self.enableUI()
+    def setReferencingFeature(self, feature):
+        # delete old wrapper
+        del self.relationWidgetWrapper
 
-        self.featureRubber.reset()
+        # get current relation
+        idx = self.relationComboBox.currentIndex()
+        if idx == -1:
+            return
+        relation = self.relations[idx]
 
-        if self.mapTool is not None:
-            self.mapCanvas.unsetMapTool(self.mapTool)
-        
-        self.cancelButton.setIcon(QIcon(":/plugins/linkit/icons/cancel.svg"))
-        self.deleteButton.setIcon(QIcon(":/plugins/linkit/icons/delete.svg"))
-        self.drawButton.setIcon(QIcon(":/plugins/linkit/icons/drawline.svg"))
-        self.selectButton.setIcon(QIcon(":/plugins/linkit/icons/maptool.svg"))
+        # disable relation reference widget if no referencing feature
+        self.referencedFeatureLayout.setEnabled(feature.isValid())
 
-        try:
-            self.sourceLayer.layerDeleted.connect(self.close)
-        except:
-            pass
-        try:
-            self.destinationLayer.layerDeleted.connect(self.close)
-            self.destinationLayer.editingStarted.connect(self.enableUI)
-            self.destinationLayer.editingStopped.connect(self.enableUI)
-            self.destinationLayer.featureDeleted.connect(self.featureDeleted)
-        except:
-            pass
+        # set line edit
+        if not feature.isValid():
+            self.referencingFeatureLineEdit.clear()
+            return
+        self.referencingFeatureLineEdit.setText(feature.id())
 
-        self.show()
+        fieldIdx = relation.fieldPairs()[0].first
+        self.relationWidgetWrapper = QgsRelationReferenceWidgetWrapper(relation.referencingLayer, fieldIdx, self.iface.mapCanvas(), self.iface.messageBar())
+        self.relationWidgetWrapper.initWidget(self.relationReferenceWidget)
+        self.relationWidgetWrapper.setEnable(relation.referencingLayer.editable())
+        self.relationWidgetWrapper.setValue(fieldIdx)
 
+
+"""
     def disconnectLayers(self):
         try:
             self.destinationLayer.layerDeleted.disconnect(self.close)
@@ -108,55 +114,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         except:
             pass
 
-    def enableUI(self):
-        self.mapCanvas.unsetMapTool(self.mapTool)
 
-        enable = False
-
-        feature = self.getFeature()
-        ok = feature[0]
-
-        if not ok:
-            self.iface.messageBar().pushMessage("Link It", feature[1], QgsMessageBar.WARNING, 4)
-        else:
-            # update current value
-            currentValue = feature[1][self.destinationField]
-            self.linkedItemID.setText("%s" % currentValue)
-            self.drawLink()
-
-        # destination layer is editable
-        if ok and self.destinationLayer.isEditable():
-            enable = True
-
-        # enable UI
-        self.editButtonWidget.setEnabled(enable)
-        self.selectButton.show()
-        self.cancelButton.hide()
-
-    def getFeature(self):
-        # check layers
-        if self.destinationLayer is None:
-            return False, "Destination layer does not exist."
-
-        if self.sourceLayer is None:
-            return False, "Source layer does not exist."
-
-        # check feature exist and fetch feature at once
-        feature = QgsFeature()
-        if self.destinationLayer.getFeatures(QgsFeatureRequest().setFilterFid(self.featureId)).nextFeature(feature) is False:
-            return False, "Could not fetch feature at ID %u." % self.featureId
-
-        # check destination field exist
-        if self.destinationLayer.fieldNameIndex(self.destinationField) == -1:
-            return False, "Destination field (%s) does not exist." % self.featureId
-
-        return True, feature
-
-    def featureDeleted(self, fid):
-        if self.featureId is None:
-            return
-        if self.featureId == fid:
-            self.close()
 
     def closeEvent(self, e):
         if self.mapTool is not None:
@@ -172,34 +130,6 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.mapCanvas.setMapTool(self.mapTool)
         self.selectButton.hide()
         self.cancelButton.show()
-
-    @pyqtSlot(name="on_cancelButton_clicked")
-    def unsetMapTool(self, dummy=None):
-        self.mapCanvas.unsetMapTool(self.mapTool)
-        self.selectButton.show()
-        self.cancelButton.hide()
-
-    @pyqtSlot(name="on_deleteButton_clicked")
-    def deleteLink(self):
-        self.linkedItemID.clear()
-        self.updateLink("")
-
-    def updateLink(self, new):
-        new = castFeatureId(new)
-        fldIdx = self.destinationLayer.fieldNameIndex(self.destinationField)
-        if self.destinationLayer.isEditable():
-            if not self.destinationLayer.editBuffer().changeAttributeValue(self.featureId, fldIdx, new):
-                self.iface.messageBar().pushMessage("Link It", "Could not update link value.",
-                                                    QgsMessageBar.WARNING, 4)
-        else:
-            self.iface.messageBar().pushMessage("Link It", "Destination layer must be editable.",
-                                                QgsMessageBar.WARNING, 4)
-        self.drawLink()
-
-    def featureIdentified(self, new):
-        self.linkedItemID.setText("%s" % new)
-        self.updateLink(new)
-        self.unsetMapTool()
 
     @pyqtSlot(bool, name="on_drawButton_toggled")
     def drawLink(self, dummy=None):
@@ -248,9 +178,4 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.linkRubber.setLineStyle(Qt.DashLine)
 
         self.mapCanvas.refresh()
-
-
-
-            
-            
-
+"""

@@ -8,5 +8,5 @@ QGIS module
 """
 
 def classFactory(iface):
-    from linkit import LinkIt
+    from linkit_plugin import LinkIt
     return LinkIt(iface)
