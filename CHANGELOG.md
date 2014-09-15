@@ -1,5 +1,10 @@
 ## Changelog
 
+**5.0** 23.09.2014
+
+* Use relations defined in project
+* New GUI using native QGIS widgets
+
 **4.0.2** 20.02.2014
 
 * fix feature deletion
