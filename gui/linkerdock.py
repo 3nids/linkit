@@ -41,10 +41,14 @@ def castFeatureId(text):
 
 class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
     def __init__(self, iface):
+        QDockWidget.__init__(self)
+        self.setupUi(self)
+        SettingDialog.__init__(self, MySettings(), False, True)
+
         self.iface = iface
         self.settings = MySettings()
-        self.linkRubber = QgsRubberBand(self.mapCanvas)
-        self.featureRubber = QgsRubberBand(self.mapCanvas)
+        self.linkRubber = QgsRubberBand(self.iface.mapCanvas())
+        self.featureRubber = QgsRubberBand(self.iface.mapCanvas())
         self.mapTool = None
 
         self.relationManager = QgsProject.instance().relationManager()
@@ -52,10 +56,6 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.relation = None
 
         self.relationWidgetWrapper = None
-
-        QDockWidget.__init__(self)
-        self.setupUi(self)
-        SettingDialog.__init__(self, MySettings(), False, True)
 
         self.relationComboBox.currentIndexChanged.connect(self.currentRelationChanged)
 

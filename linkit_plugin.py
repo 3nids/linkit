@@ -11,9 +11,7 @@ from PyQt4.QtCore import QUrl, Qt, QObject
 from PyQt4.QtGui import QIcon, QAction, QDesktopServices
 
 from linkit.core.mysettings import MySettings
-from linkit.gui.linkmanagerdialog import LinkManagerDialog
 from linkit.gui.linkerdock import LinkerDock
-from linkit.gui.mysettingsdialog import MySettingsDialog
 
 import resources
 
@@ -34,11 +32,7 @@ class LinkIt(QObject):
         self.settings = MySettings()
 
     def initGui(self):
-        self.iface.projectRead.connect(self.createActions)
-        self.iface.newProjectCreated.connect(self.createActions)
-
         dockVisible = self.settings.value("dockVisible")
-
         if MySettings().value("dockArea") == 1:
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.linkerDock)
         else:
@@ -49,7 +43,9 @@ class LinkIt(QObject):
         self.showDockAction = QAction(QIcon(":/plugins/linkit/icons/linkit.png"), "Show link editor", self)
         self.showDockAction.setCheckable(True)
         self.showDockAction.setChecked(dockVisible)
-        self.showDockAction.triggered(self.linkerDock.setVisible)
+        self.showDockAction.triggered.connect(self.linkerDock.setVisible)
+        self.iface.addPluginToMenu("&Link It", self.showDockAction)
+        self.iface.addToolBarIcon(self.showDockAction)
         # connect layer
         self.linkManagerAction = QAction(QIcon(":/plugins/linkit/icons/connect.png"), "Links manager", self)
         self.linkManagerAction.triggered.connect(linkManagerDialog)
@@ -65,6 +61,7 @@ class LinkIt(QObject):
                   
     def unload(self):
         self.iface.removePluginMenu("&Link It", self.showDockAction)
+        self.iface.removeToolBarIcon(self.showDockAction)
         self.iface.removePluginMenu("&Link It", self.linkManagerAction)
         self.iface.removePluginMenu("&Link It", self.settingsAction)
         self.iface.removePluginMenu("&Link It", self.helpAction)

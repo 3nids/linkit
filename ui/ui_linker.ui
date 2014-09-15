@@ -75,6 +75,9 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="openFormButtonVisible">
+             <bool>false</bool>
+            </property>
            </widget>
           </item>
          </layout>

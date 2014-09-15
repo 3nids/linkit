@@ -1,6 +1,6 @@
 from PyQt4.QtGui import QColor
 
-from ..qgissettingmanager import *
+from linkit.qgissettingmanager import *
 
 pluginName = "linkit"
 
