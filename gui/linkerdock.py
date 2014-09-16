@@ -8,7 +8,7 @@ QGIS module
 
 from PyQt4.QtCore import pyqtSlot, Qt
 from PyQt4.QtGui import QDockWidget, QIcon
-from qgis.core import QgsProject, QgsFeature, QgsFeatureRequest, QgsPoint, QgsGeometry, QGis, QgsMapLayerRegistry
+from qgis.core import QgsProject, QgsFeature, QgsFeatureRequest, QgsPoint, QgsGeometry, QGis, QgsMapLayerRegistry, QgsRelation
 from qgis.gui import QgsRubberBand, QgsMessageBar, QgsEditorWidgetRegistry, QgsMapToolIdentifyFeature, QgsAttributeEditorContext
 from math import pi, sqrt, sin, cos
 
@@ -46,6 +46,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.setupUi(self)
         SettingDialog.__init__(self, MySettings(), False, True)
         self.relationReferenceWidget.setAllowMapIdentification(True)
+        self.relationReferenceWidget.setEmbedForm(False)
 
         # QGIS
         self.iface = iface
@@ -58,7 +59,8 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         # Relation management
         self.relationManager = QgsProject.instance().relationManager()
         self.relationManager.relationsLoaded.connect(self.loadRelations)
-        self.relation = None
+        self.relation = QgsRelation()
+        self.feature = QgsFeature()
         self.relationWidgetWrapper = None
         self.editorContext = QgsAttributeEditorContext()
         self.editorContext.setVectorLayerTools(self.iface.vectorLayerTools())
@@ -78,35 +80,49 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.iface.mapCanvas().unsetMapTool(self.mapTool)
 
     def loadRelations(self):
-        self.relation = None
+        self.relation = QgsRelation()
+        self.feature = QgsFeature()
         self.relationComboBox.clear()
         for relation in self.relationManager.referencedRelations():
             if relation.referencingLayer().hasGeometryType():
                 self.relationComboBox.addItem(relation.name(), relation.id())
 
     def currentRelationChanged(self, index):
+        # disconnect previous relation
+        if self.relation.isValid():
+            self.relation.referencingLayer().editingStarted.disconnect(self.relationEditableChanged)
+            self.relation.referencingLayer().editingStopped.disconnect(self.relationEditableChanged)
+            self.relation.referencingLayer().attributeValueChanged.disconnect(self.layerValueChangedOutside)
+
         self.referencingFeatureLayout.setEnabled(index >= 0)
         relationId = self.relationComboBox.itemData(index)
         self.relation = self.relationManager.relation(relationId)
         self.mapTool.setLayer(self.relation.referencingLayer())
-        self.setReferencingFeature(QgsFeature())
+        self.setReferencingFeature()
+        # connect
+        if self.relation.isValid():
+            self.relation.referencingLayer().editingStarted.connect(self.relationEditableChanged)
+            self.relation.referencingLayer().editingStopped.connect(self.relationEditableChanged)
+            self.relation.referencingLayer().attributeValueChanged.connect(self.layerValueChangedOutside)
 
-    def setReferencingFeature(self, feature):
-        # delete old wrapper
-        # del self.relationWidgetWrapper
+    def setReferencingFeature(self, feature=QgsFeature()):
+        self.deactivateMapTool()
+        self.feature = QgsFeature(feature)
+
+        del self.relationWidgetWrapper
 
         # disable relation reference widget if no referencing feature
         self.referencedFeatureLayout.setEnabled(feature.isValid())
 
         # set line edit
-        if self.relation is None or not self.relation.isValid() or not feature.isValid():
+        if not self.relation.isValid() or not feature.isValid():
             self.referencingFeatureLineEdit.clear()
+            self.relationReferenceWidget.setForeignKey(None)
+            self.relationWidgetWrapper = None
             return
         self.referencingFeatureLineEdit.setText("%s" % feature.id())
 
-        fieldName = self.relation.fieldPairs().keys()[0]
-        fieldIdx = self.relation.referencingLayer().fieldNameIndex(fieldName)
-
+        fieldIdx = self.fieldIndex()
         widgetConfig = self.relation.referencingLayer().editorWidgetV2Config(fieldIdx)
         self.relationWidgetWrapper = QgsEditorWidgetRegistry.instance().create("RelationReference",
                                                                                self.relation.referencingLayer(),
@@ -116,19 +132,44 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
                                                                                self,
                                                                                self.editorContext)
 
-        #self.relationWidgetWrapper = QgsRelationReferenceWidgetWrapper(self.relation.referencingLayer(),
-          #                                                             fieldIdx,
-         #                                                              self.relationReferenceWidget,
-           #                                                            self.iface.mapCanvas(),
-                     #                                                  self.iface.messageBar())
-
-        #self.relationWidgetWrapper.initWidget(self.relationReferenceWidget)
         self.relationWidgetWrapper.setEnabled(self.relation.referencingLayer().isEditable())
-        self.relationWidgetWrapper.setValue(fieldIdx)
+        self.relationWidgetWrapper.setValue(feature[fieldIdx])
+        self.relationWidgetWrapper.valueChanged.connect(self.foreignKeyChanged)
         # override field definition to allow map identification
         self.relationReferenceWidget.setAllowMapIdentification(True)
+        self.relationReferenceWidget.setEmbedForm(False)
 
+    def foreignKeyChanged(self, newKey):
+        if not self.relation.isValid() or not self.relation.referencingLayer().isEditable() or not self.feature.isValid():
+            return
+        self.relation.referencingLayer().editBuffer().changeAttributeValue(self.feature.id(), self.fieldIndex(), newKey)
 
+    def relationEditableChanged(self):
+        if self.relationWidgetWrapper is not None:
+            self.relationWidgetWrapper.setEnabled( self.relation.isValid() and self.relation.referencingLayer().isEditable())
+
+    def layerValueChangedOutside(self, fid, fieldIdx, value):
+        if not self.relation.isValid() or not self.feature.isValid() or self.relationWidgetWrapper is None:
+            return
+        # not the correct feature
+        if fid != self.feature.id():
+            return
+        # not the correct field
+        if fieldIdx != self.fieldIndex():
+            return
+        # widget already has this value
+        if value == self.relationWidgetWrapper.value():
+            return
+        self.relationWidgetWrapper.valueChanged.disconnect(self.foreignKeyChanged)
+        self.relationWidgetWrapper.setValue(value)
+        self.relationWidgetWrapper.valueChanged.connect(self.foreignKeyChanged)
+
+    def fieldIndex(self):
+        if not self.relation.isValid():
+            return -1
+        fieldName = self.relation.fieldPairs().keys()[0]
+        fieldIdx = self.relation.referencingLayer().fieldNameIndex(fieldName)
+        return fieldIdx
 
 """
     def disconnectLayers(self):
