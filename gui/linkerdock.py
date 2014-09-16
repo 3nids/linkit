@@ -9,7 +9,7 @@ QGIS module
 from PyQt4.QtCore import pyqtSlot, Qt
 from PyQt4.QtGui import QDockWidget, QIcon
 from qgis.core import QgsProject, QgsFeature, QgsFeatureRequest, QgsPoint, QgsGeometry, QGis, QgsMapLayerRegistry
-from qgis.gui import QgsRubberBand, QgsMessageBar, QgsRelationReferenceWidgetWrapper, QgsMapToolIdentifyFeature
+from qgis.gui import QgsRubberBand, QgsMessageBar, QgsEditorWidgetRegistry, QgsMapToolIdentifyFeature, QgsAttributeEditorContext
 from math import pi, sqrt, sin, cos
 
 from linkit.qgissettingmanager import SettingDialog
@@ -60,6 +60,8 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.relationManager.relationsLoaded.connect(self.loadRelations)
         self.relation = None
         self.relationWidgetWrapper = None
+        self.editorContext = QgsAttributeEditorContext()
+        self.editorContext.setVectorLayerTools(self.iface.vectorLayerTools())
 
         # Connect signal/slot
         self.relationComboBox.currentIndexChanged.connect(self.currentRelationChanged)
@@ -97,19 +99,30 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.referencedFeatureLayout.setEnabled(feature.isValid())
 
         # set line edit
-        if self.relation is None or not feature.isValid():
+        if self.relation is None or not self.relation.isValid() or not feature.isValid():
             self.referencingFeatureLineEdit.clear()
             return
         self.referencingFeatureLineEdit.setText("%s" % feature.id())
 
         fieldName = self.relation.fieldPairs().keys()[0]
         fieldIdx = self.relation.referencingLayer().fieldNameIndex(fieldName)
-        self.relationWidgetWrapper = QgsRelationReferenceWidgetWrapper(self.relation.referencingLayer(),
-                                                                       fieldIdx,
-                                                                       self.relationReferenceWidget,
-                                                                       self.iface.mapCanvas(),
-                                                                       self.iface.messageBar())
-        self.relationWidgetWrapper.initWidget(self.relationReferenceWidget)
+
+        widgetConfig = self.relation.referencingLayer().editorWidgetV2Config(fieldIdx)
+        self.relationWidgetWrapper = QgsEditorWidgetRegistry.instance().create("RelationReference",
+                                                                               self.relation.referencingLayer(),
+                                                                               fieldIdx,
+                                                                               widgetConfig,
+                                                                               self.relationReferenceWidget,
+                                                                               self,
+                                                                               self.editorContext)
+
+        #self.relationWidgetWrapper = QgsRelationReferenceWidgetWrapper(self.relation.referencingLayer(),
+          #                                                             fieldIdx,
+         #                                                              self.relationReferenceWidget,
+           #                                                            self.iface.mapCanvas(),
+                     #                                                  self.iface.messageBar())
+
+        #self.relationWidgetWrapper.initWidget(self.relationReferenceWidget)
         self.relationWidgetWrapper.setEnabled(self.relation.referencingLayer().isEditable())
         self.relationWidgetWrapper.setValue(fieldIdx)
         # override field definition to allow map identification

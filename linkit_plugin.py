@@ -14,6 +14,7 @@ from linkit.core.mysettings import MySettings
 from linkit.gui.linkerdock import LinkerDock
 
 from linkit.resources_rc import *
+import resources_rc
 
 
 def linkManagerDialog():
