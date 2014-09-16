@@ -9,7 +9,7 @@ QGIS module
 from PyQt4.QtCore import pyqtSlot, Qt
 from PyQt4.QtGui import QDockWidget, QIcon
 from qgis.core import QgsProject, QgsFeature, QgsFeatureRequest, QgsPoint, QgsGeometry, QGis, QgsMapLayerRegistry
-from qgis.gui import QgsRubberBand, QgsMessageBar, QgsRelationReferenceWidgetWrapper
+from qgis.gui import QgsRubberBand, QgsMessageBar, QgsRelationReferenceWidgetWrapper, QgsMapToolIdentifyFeature
 from math import pi, sqrt, sin, cos
 
 from linkit.qgissettingmanager import SettingDialog
@@ -41,62 +41,80 @@ def castFeatureId(text):
 
 class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
     def __init__(self, iface):
+        # GUI
         QDockWidget.__init__(self)
         self.setupUi(self)
         SettingDialog.__init__(self, MySettings(), False, True)
+        self.relationReferenceWidget.setAllowMapIdentification(True)
 
+        # QGIS
         self.iface = iface
         self.settings = MySettings()
         self.linkRubber = QgsRubberBand(self.iface.mapCanvas())
         self.featureRubber = QgsRubberBand(self.iface.mapCanvas())
-        self.mapTool = None
+        self.mapTool = QgsMapToolIdentifyFeature(self.iface.mapCanvas())
+        self.mapTool.setButton(self.identifyReferencingFeatureButton)
 
+        # Relation management
         self.relationManager = QgsProject.instance().relationManager()
         self.relationManager.relationsLoaded.connect(self.loadRelations)
         self.relation = None
-
         self.relationWidgetWrapper = None
 
+        # Connect signal/slot
         self.relationComboBox.currentIndexChanged.connect(self.currentRelationChanged)
+        self.mapTool.featureIdentified.connect(self.setReferencingFeature)
+
+        # load relations at start
+        self.loadRelations()
+
+    @pyqtSlot(name="on_identifyReferencingFeatureButton_clicked")
+    def activateMapTool(self):
+        self.iface.mapCanvas().setMapTool(self.mapTool)
+
+    def deactivateMapTool(self):
+        self.iface.mapCanvas().unsetMapTool(self.mapTool)
 
     def loadRelations(self):
         self.relation = None
         self.relationComboBox.clear()
         for relation in self.relationManager.referencedRelations():
-            if relation.referencingLayer.hasGeometryType():
-                self.relations.append(relation)
+            if relation.referencingLayer().hasGeometryType():
                 self.relationComboBox.addItem(relation.name(), relation.id())
 
     def currentRelationChanged(self, index):
         self.referencingFeatureLayout.setEnabled(index >= 0)
         relationId = self.relationComboBox.itemData(index)
         self.relation = self.relationManager.relation(relationId)
+        self.mapTool.setLayer(self.relation.referencingLayer())
         self.setReferencingFeature(QgsFeature())
 
     def setReferencingFeature(self, feature):
         # delete old wrapper
-        del self.relationWidgetWrapper
-
-        # get current relation
-        idx = self.relationComboBox.currentIndex()
-        if idx == -1:
-            return
-        relation = self.relations[idx]
+        # del self.relationWidgetWrapper
 
         # disable relation reference widget if no referencing feature
         self.referencedFeatureLayout.setEnabled(feature.isValid())
 
         # set line edit
-        if not feature.isValid():
+        if self.relation is None or not feature.isValid():
             self.referencingFeatureLineEdit.clear()
             return
-        self.referencingFeatureLineEdit.setText(feature.id())
+        self.referencingFeatureLineEdit.setText("%s" % feature.id())
 
-        fieldIdx = relation.fieldPairs()[0].first
-        self.relationWidgetWrapper = QgsRelationReferenceWidgetWrapper(relation.referencingLayer, fieldIdx, self.iface.mapCanvas(), self.iface.messageBar())
+        fieldName = self.relation.fieldPairs().keys()[0]
+        fieldIdx = self.relation.referencingLayer().fieldNameIndex(fieldName)
+        self.relationWidgetWrapper = QgsRelationReferenceWidgetWrapper(self.relation.referencingLayer(),
+                                                                       fieldIdx,
+                                                                       self.relationReferenceWidget,
+                                                                       self.iface.mapCanvas(),
+                                                                       self.iface.messageBar())
         self.relationWidgetWrapper.initWidget(self.relationReferenceWidget)
-        self.relationWidgetWrapper.setEnable(relation.referencingLayer.editable())
+        self.relationWidgetWrapper.setEnabled(self.relation.referencingLayer().isEditable())
         self.relationWidgetWrapper.setValue(fieldIdx)
+        # override field definition to allow map identification
+        self.relationReferenceWidget.setAllowMapIdentification(True)
+
 
 
 """

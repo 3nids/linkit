@@ -13,7 +13,7 @@ from PyQt4.QtGui import QIcon, QAction, QDesktopServices
 from linkit.core.mysettings import MySettings
 from linkit.gui.linkerdock import LinkerDock
 
-import resources
+from linkit.resources_rc import *
 
 
 def linkManagerDialog():
@@ -60,6 +60,8 @@ class LinkIt(QObject):
         self.iface.addPluginToMenu("&Link It", self.helpAction)
                   
     def unload(self):
+        self.linkerDock.deactivateMapTool()
+
         self.iface.removePluginMenu("&Link It", self.showDockAction)
         self.iface.removeToolBarIcon(self.showDockAction)
         self.iface.removePluginMenu("&Link It", self.linkManagerAction)
