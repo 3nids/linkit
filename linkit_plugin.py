@@ -11,7 +11,7 @@ from PyQt4.QtCore import QUrl, Qt, QObject
 from PyQt4.QtGui import QIcon, QAction, QDesktopServices
 
 from qgis.core import QgsProject
-from qgis.gui import QgsMapLayerAction, QgsMapLayerActionRegistry
+from qgis.gui import QgsMapLayerAction, QgsMapLayerActionRegistry, QgsMessageBar
 
 from linkit.core.mysettings import MySettings
 from linkit.gui.linkerdock import LinkerDock
@@ -87,7 +87,7 @@ class LinkIt(QObject):
         # add actions
         for relation in relations:
             if relation.id() not in self.mapLayerActions:
-                action = QgsMapLayerAction("set related feature for %s" % relation.name(), relation.referencedLayer(), QgsMapLayerAction.SingleFeature)
+                action = QgsMapLayerAction("set related feature for %s" % relation.name(), self, relation.referencedLayer(), QgsMapLayerAction.SingleFeature)
                 QgsMapLayerActionRegistry.instance().addMapLayerAction(action)
                 action.triggeredForFeature.connect(self.linkIt)
                 self.mapLayerActions[relation.id()] = action
@@ -96,13 +96,5 @@ class LinkIt(QObject):
         senderAction = self.sender()
         for relationId, action in self.mapLayerActions.iteritems():
             if action == senderAction:
-                index = self.linkerDock.relationComboBox.findData(relationId)
-                self.linkerDock.currentRelationChanged(index)
-                self.linkerDock.setReferencingFeature(feature)
-                self.linkerDock.relationReferenceWidget.mapIdentification()
+                self.linkerDock.runForFeature(relationId, layer, feature)
                 return
-
-
-
-
-

@@ -72,6 +72,17 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         # load relations at start
         self.loadRelations()
 
+    def runForFeature(self, relationId, layer, feature):
+        index = self.relationComboBox.findData(relationId)
+        self.relationComboBox.setCurrentIndex(index)
+        self.setReferencingFeature(feature)
+        self.show()
+        if not layer.isEditable():
+            self.iface.messageBar().pushMessage("Link It", "Cannot set a new related feature since %s is not editable" % layer.name(), QgsMessageBar.WARNING, 4)
+        else:
+            self.relationReferenceWidget.mapIdentification()
+
+
     @pyqtSlot(name="on_identifyReferencingFeatureButton_clicked")
     def activateMapTool(self):
         self.iface.mapCanvas().setMapTool(self.mapTool)
@@ -142,11 +153,12 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
     def foreignKeyChanged(self, newKey):
         if not self.relation.isValid() or not self.relation.referencingLayer().isEditable() or not self.feature.isValid():
             return
-        self.relation.referencingLayer().editBuffer().changeAttributeValue(self.feature.id(), self.fieldIndex(), newKey)
+        if not self.relation.referencingLayer().editBuffer().changeAttributeValue(self.feature.id(), self.fieldIndex(), newKey):
+            self.iface.messageBar().pushMessage("Link It", "Cannot change attribute value.", QgsMessageBar.CRITICAL)
 
     def relationEditableChanged(self):
         if self.relationWidgetWrapper is not None:
-            self.relationWidgetWrapper.setEnabled( self.relation.isValid() and self.relation.referencingLayer().isEditable())
+            self.relationWidgetWrapper.setEnabled(self.relation.isValid() and self.relation.referencingLayer().isEditable())
 
     def layerValueChangedOutside(self, fid, fieldIdx, value):
         if not self.relation.isValid() or not self.feature.isValid() or self.relationWidgetWrapper is None:
@@ -171,38 +183,19 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         fieldIdx = self.relation.referencingLayer().fieldNameIndex(fieldName)
         return fieldIdx
 
-"""
-    def disconnectLayers(self):
-        try:
-            self.destinationLayer.layerDeleted.disconnect(self.close)
-            self.destinationLayer.editingStarted.disconnect(self.enableUI)
-            self.destinationLayer.editingStopped.disconnect(self.enableUI)
-            self.destinationLayer = None
-        except:
-            pass
-        try:
-            self.sourceLayer.layerDeleted.disconnect(self.enableUI)
-            self.sourceLayer = None
-        except:
-            pass
-
-
-
     def closeEvent(self, e):
-        if self.mapTool is not None:
-            self.mapCanvas.unsetMapTool(self.mapTool)
+        print "clsose"
+        self.iface.mapCanvas().unsetMapTool(self.mapTool)
         self.linkRubber.reset()
         self.featureRubber.reset()
-        self.disconnectLayers()
+        if self.relation.isValid():
+            self.relation.referencingLayer().editingStarted.disconnect(self.relationEditableChanged)
+            self.relation.referencingLayer().editingStopped.disconnect(self.relationEditableChanged)
+            self.relation.referencingLayer().attributeValueChanged.disconnect(self.layerValueChangedOutside)
 
-    @pyqtSlot(name="on_selectButton_clicked")
-    def setMapTool(self):
-        self.mapTool = MapToolGetFeature(self.mapCanvas, self.sourceLayer)
-        self.mapTool.featureIdentified.connect(self.featureIdentified)
-        self.mapCanvas.setMapTool(self.mapTool)
-        self.selectButton.hide()
-        self.cancelButton.show()
 
+
+"""
     @pyqtSlot(bool, name="on_drawButton_toggled")
     def drawLink(self, dummy=None):
         self.linkRubber.reset()
