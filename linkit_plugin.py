@@ -10,6 +10,9 @@ QGIS module
 from PyQt4.QtCore import QUrl, Qt, QObject
 from PyQt4.QtGui import QIcon, QAction, QDesktopServices
 
+from qgis.core import QgsProject
+from qgis.gui import QgsMapLayerAction, QgsMapLayerActionRegistry
+
 from linkit.core.mysettings import MySettings
 from linkit.gui.linkerdock import LinkerDock
 
@@ -31,6 +34,9 @@ class LinkIt(QObject):
         self.iface = iface
         self.linkerDock = LinkerDock(iface)
         self.settings = MySettings()
+        self.mapLayerActions = {}
+        QgsProject.instance().relationManager().relationsLoaded.connect(self.loadRelations)
+        self.loadRelations()
 
     def initGui(self):
         dockVisible = self.settings.value("dockVisible")
@@ -69,5 +75,34 @@ class LinkIt(QObject):
         self.iface.removePluginMenu("&Link It", self.settingsAction)
         self.iface.removePluginMenu("&Link It", self.helpAction)
         self.iface.removeDockWidget(self.linkerDock)
+
+    def loadRelations(self):
+        relations = QgsProject.instance().relationManager().referencedRelations()
+        relationsIds = [relation.id() for relation in relations]
+        # remove actions
+        for relationId in self.mapLayerActions:
+            if relationId not in relationsIds:
+                QgsMapLayerActionRegistry.instance().removeMapLayerActions(self.mapLayerActions[relationId])
+                del self.mapLayerActions[relationId]
+        # add actions
+        for relation in relations:
+            if relation.id() not in self.mapLayerActions:
+                action = QgsMapLayerAction("set related feature for %s" % relation.name(), relation.referencedLayer(), QgsMapLayerAction.SingleFeature)
+                QgsMapLayerActionRegistry.instance().addMapLayerAction(action)
+                action.triggeredForFeature.connect(self.linkIt)
+                self.mapLayerActions[relation.id()] = action
+
+    def linkIt(self, layer, feature):
+        senderAction = self.sender()
+        for relationId, action in self.mapLayerActions.iteritems():
+            if action == senderAction:
+                index = self.linkerDock.relationComboBox.findData(relationId)
+                self.linkerDock.currentRelationChanged(index)
+                self.linkerDock.setReferencingFeature(feature)
+                self.linkerDock.relationReferenceWidget.mapIdentification()
+                return
+
+
+
 
 

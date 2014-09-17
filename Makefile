@@ -6,6 +6,11 @@
 # 1. Folder name is the plugin name
 # 2. Resource file is at ./resources.qrc
 
+# TIPS
+# 1. If .ui files are in a subfolder
+#     create a file resources_rc.py with:
+#     from ..resources_rc import *
+
 ####################################################
 # CONFIGURATION
 
