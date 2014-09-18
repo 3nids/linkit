@@ -8,7 +8,7 @@ QGIS module
 
 from PyQt4.QtCore import pyqtSlot, Qt
 from PyQt4.QtGui import QDockWidget
-from qgis.core import QgsProject, QgsFeature, QgsRelation
+from qgis.core import QgsProject, QgsFeature, QgsRelation, QGis
 from qgis.gui import QgsRubberBand, QgsMessageBar, QgsEditorWidgetRegistry, QgsMapToolIdentifyFeature, QgsAttributeEditorContext
 
 from linkit.qgissettingmanager import SettingDialog
@@ -17,32 +17,13 @@ from linkit.core.arc import arc
 from linkit.ui.ui_linker import Ui_linker
 
 
-def centroid(feature):
-    geom = feature.geometry()
-    if geom.type() == QGis.Line:
-        return geom.interpolate(geom.length()/2).asPoint()
-    else:
-        return geom.centroid().asPoint()
-
-
 class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
     def __init__(self, iface):
-        # GUI
-        QDockWidget.__init__(self)
-        self.setupUi(self)
-        SettingDialog.__init__(self, MySettings(), False, True)
-
-        self.relationReferenceWidget.setAllowMapIdentification(True)
-        self.relationReferenceWidget.setEmbedForm(False)
-
         # QGIS
         self.iface = iface
         self.settings = MySettings()
         self.linkRubber = QgsRubberBand(self.iface.mapCanvas())
         self.featureRubber = QgsRubberBand(self.iface.mapCanvas())
-        self.mapTool = QgsMapToolIdentifyFeature(self.iface.mapCanvas())
-        self.mapTool.setButton(self.identifyReferencingFeatureButton)
-
         # Relation management
         self.relationManager = QgsProject.instance().relationManager()
         self.relationManager.relationsLoaded.connect(self.loadRelations)
@@ -52,12 +33,35 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.editorContext = QgsAttributeEditorContext()
         self.editorContext.setVectorLayerTools(self.iface.vectorLayerTools())
 
+        # GUI
+        QDockWidget.__init__(self)
+        self.setupUi(self)
+        SettingDialog.__init__(self, MySettings(), False, True)
+
+        self.relationReferenceWidget.setAllowMapIdentification(True)
+        self.relationReferenceWidget.setEmbedForm(False)
+
+        self.mapTool = QgsMapToolIdentifyFeature(self.iface.mapCanvas())
+        self.mapTool.setButton(self.identifyReferencingFeatureButton)
+
         # Connect signal/slot
         self.relationComboBox.currentIndexChanged.connect(self.currentRelationChanged)
         self.mapTool.featureIdentified.connect(self.setReferencingFeature)
 
         # load relations at start
         self.loadRelations()
+
+    def showEvent(self, QShowEvent):
+        self.drawLink()
+
+    def closeEvent(self, e):
+        self.iface.mapCanvas().unsetMapTool(self.mapTool)
+        self.linkRubber.reset()
+        self.featureRubber.reset()
+        if self.relation.isValid():
+            self.relation.referencingLayer().editingStarted.disconnect(self.relationEditableChanged)
+            self.relation.referencingLayer().editingStopped.disconnect(self.relationEditableChanged)
+            self.relation.referencingLayer().attributeValueChanged.disconnect(self.layerValueChangedOutside)
 
     def runForFeature(self, relationId, layer, feature):
         index = self.relationComboBox.findData(relationId)
@@ -119,7 +123,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
             return
         self.referencingFeatureLineEdit.setText("%s" % feature.id())
 
-        fieldIdx = self.fieldIndex()
+        fieldIdx = self.referencingFieldIndex()
         widgetConfig = self.relation.referencingLayer().editorWidgetV2Config(fieldIdx)
         self.relationWidgetWrapper = QgsEditorWidgetRegistry.instance().create("RelationReference",
                                                                                self.relation.referencingLayer(),
@@ -136,11 +140,16 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.relationReferenceWidget.setAllowMapIdentification(True)
         self.relationReferenceWidget.setEmbedForm(False)
 
+        # update drawn link
+        self.drawLink()
+
     def foreignKeyChanged(self, newKey):
         if not self.relation.isValid() or not self.relation.referencingLayer().isEditable() or not self.referencingFeature.isValid():
+            self.drawLink()
             return
-        if not self.relation.referencingLayer().editBuffer().changeAttributeValue(self.referencingFeature.id(), self.fieldIndex(), newKey):
+        if not self.relation.referencingLayer().editBuffer().changeAttributeValue(self.referencingFeature.id(), self.referencingFieldIndex(), newKey):
             self.iface.messageBar().pushMessage("Link It", "Cannot change attribute value.", QgsMessageBar.CRITICAL)
+        self.drawLink()
 
     def relationEditableChanged(self):
         if self.relationWidgetWrapper is not None:
@@ -153,7 +162,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         if fid != self.referencingFeature.id():
             return
         # not the correct field
-        if fieldIdx != self.fieldIndex():
+        if fieldIdx != self.referencingFieldIndex():
             return
         # widget already has this value
         if value == self.relationWidgetWrapper.value():
@@ -162,39 +171,36 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.relationWidgetWrapper.setValue(value)
         self.relationWidgetWrapper.valueChanged.connect(self.foreignKeyChanged)
 
-    def fieldIndex(self):
+    def referencingFieldIndex(self):
         if not self.relation.isValid():
             return -1
         fieldName = self.relation.fieldPairs().keys()[0]
         fieldIdx = self.relation.referencingLayer().fieldNameIndex(fieldName)
         return fieldIdx
 
-    def closeEvent(self, e):
-        print "clsose"
-        self.iface.mapCanvas().unsetMapTool(self.mapTool)
-        self.linkRubber.reset()
-        self.featureRubber.reset()
-        if self.relation.isValid():
-            self.relation.referencingLayer().editingStarted.disconnect(self.relationEditableChanged)
-            self.relation.referencingLayer().editingStopped.disconnect(self.relationEditableChanged)
-            self.relation.referencingLayer().attributeValueChanged.disconnect(self.layerValueChangedOutside)
-
-
-    @pyqtSlot(name="on_drawButton_toggled")
+    @pyqtSlot(bool, name="on_drawButton_toggled")
     def drawLink(self):
         self.linkRubber.reset()
-        referencedFeature = self.relationReferenceWidget.getFeature()
+        referencedFeature = self.relationReferenceWidget.referencedFeature()
 
-        if not self.drawButton.isChecked() or not self.feature.isValid() or not referencedFeature.isValid() or not self.relation.isValid():
+        if not self.drawButton.isChecked() or not self.referencingFeature.isValid() or not referencedFeature.isValid() or not self.relation.isValid():
             return
 
-        p1 = centroid(referencedFeature)
-        p2 = centroid(self.referencingFeature)
+        p1 = self.centroid(self.relation.referencedLayer(), referencedFeature)
+        p2 = self.centroid(self.relation.referencingLayer(), self.referencingFeature)
         geom = arc(p1, p2)
 
-        self.linkRubber.setToGeometry(geom, self.destinationLayer)
+        self.linkRubber.setToGeometry(geom, None)
         self.linkRubber.setWidth(self.settings.value("rubberWidth"))
         self.linkRubber.setColor(self.settings.value("rubberColor"))
         self.linkRubber.setLineStyle(Qt.DashLine)
 
-        self.mapCanvas.refresh()
+    def centroid(self, layer, feature):
+        geom = feature.geometry()
+        if geom.type() == QGis.Line:
+            geom = geom.interpolate(geom.length()/2)
+        else:
+            geom = geom.centroid()
+        return self.iface.mapCanvas().mapSettings().layerToMapCoordinates(layer, geom.asPoint())
+
+

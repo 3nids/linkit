@@ -51,6 +51,7 @@ class LinkIt(QObject):
     def unload(self):
         self.linkerDock.visibilityChanged.disconnect(self.dockVisibilityChanged)
         self.linkerDock.deactivateMapTool()
+        self.linkerDock.close()
 
         self.iface.removePluginMenu("&Link It", self.showDockAction)
         self.iface.removeToolBarIcon(self.showDockAction)

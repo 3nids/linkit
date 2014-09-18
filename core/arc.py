@@ -2,7 +2,11 @@
 from math import sin, cos, sqrt, pi
 from qgis.core import QgsPoint, QgsGeometry
 
-def arc(p1, p2):
+
+# offset should be  > 0
+
+
+def arc(p1, p2, offset=1):
 
     # point in middle
     mp = QgsPoint((p1.x()+p2.x())/2, (p1.y()+p2.y())/2)
@@ -11,8 +15,6 @@ def arc(p1, p2):
     # orthogonal direction to segment p1-p2
     az = (p1.azimuth(p2)+90)*pi/180
     # create point distant to segment of offset of segment length, will be center of circular arc
-    # offset should be  0 < offset < 1
-    offset = 1/12
     cp = QgsPoint(mp.x()+d*offset*sin(az),
                   mp.y()+d*offset*cos(az))
     # radius

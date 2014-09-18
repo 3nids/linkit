@@ -4,7 +4,6 @@
 
 # REQUIREMENTS
 # 1. Folder name is the plugin name
-# 2. Resource file is at ./resources.qrc
 
 # TIPS
 # 1. If .ui files are in a subfolder
@@ -17,13 +16,7 @@
 # QGIS DIR
 QGISDIR = $(HOME)/.qgis2
 
-# ICONS FOLDER
-ICONS_DIR = icons
-
-# UI FILES FOLDER
-UI_DIR = ui
-
-# TRANSLATION FILES FOLDER
+# i18n FOLDER
 LN_DIR = i18n
 
 # COMMAND TO RUN DEFAULT APPLICATION (launch a URL)
@@ -38,31 +31,29 @@ OPEN = xdg-open
 PLUGINNAME =$(shell basename $(CURDIR))
 VERSION = `cat $(PLUGINNAME)/metadata.txt | grep version | sed 's/version=//'`
 
-PY_FILES = $(find . -name '*.py' ! -name "ui_*.py")
+PY_FILES = $(filter-out ui_%.py, $(wildcard *.py) $(wildcard **/*.py))
 EXTRAS = metadata.txt resources.qrc
 
-UI_SOURCES=$(wildcard $(UI_DIR)/*.ui)
+UI_SOURCES=$(wildcard *.ui) $(wildcard **/*.ui)
 UI_FILES=$(join $(dir $(UI_SOURCES)), $(notdir $(UI_SOURCES:%.ui=%.py)))
 
-RC_SOURCES=$(wildcard *.qrc)
+RC_SOURCES=$(wildcard *.qrc) $(wildcard **/*.qrc)
 RC_FILES=$(join $(dir $(RC_SOURCES)), $(notdir $(RC_SOURCES:%.qrc=%_rc.py)))
 
-LN_SOURCES=$(wildcard $(LN_DIR)/*.ts)
+LN_SOURCES=$(wildcard *.ts) $(wildcard **/*.ts)
 LN_FILES=$(join $(dir $(LN_SOURCES)), $(notdir $(LN_SOURCES:%.ts=%.qm)))
 
 GEN_FILES = ${UI_FILES} ${RC_FILES}
 
 all: $(GEN_FILES)
-ui: $(UI_FILES)
-resources: $(RC_FILES)
 
-$(UI_FILES): $(UI_DIR)/%.py: $(UI_DIR)/%.ui
+$(UI_FILES): %.py: %.ui
 	pyuic4 -o $@ $<
 
 $(RC_FILES): %_rc.py: %.qrc
 	pyrcc4 -o $@ $<
 
-$(LN_FILES): $(LN_DIR)/%.qm: $(LN_DIR)/%.ts
+$(LN_FILES): %.qm: %.ts
 	lrelease-qt4 $<
 
 clean:
@@ -72,7 +63,7 @@ clean:
 compile: $(UI_FILES) $(RC_FILES) $(LN_FILES)
 
 transup:
-	pylupdate4 -noobsolete $(UI_SOURCES) $(PY_FILES) -ts i18n/$(PLUGINNAME)_fr.ts
+	pylupdate4 -noobsolete $(UI_SOURCES) $(PY_FILES) -ts $(LN_DIR)/$(PLUGINNAME)_fr.ts
 
 deploy: compile transup
 	mkdir -p $(QGISDIR)/python/plugins/$(PLUGINNAME)
