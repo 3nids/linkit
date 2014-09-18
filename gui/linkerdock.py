@@ -7,21 +7,14 @@ QGIS module
 """
 
 from PyQt4.QtCore import pyqtSlot, Qt
-from PyQt4.QtGui import QDockWidget, QIcon
-from qgis.core import QgsProject, QgsFeature, QgsFeatureRequest, QgsPoint, QgsGeometry, QGis, QgsMapLayerRegistry, QgsRelation
+from PyQt4.QtGui import QDockWidget
+from qgis.core import QgsProject, QgsFeature, QgsRelation
 from qgis.gui import QgsRubberBand, QgsMessageBar, QgsEditorWidgetRegistry, QgsMapToolIdentifyFeature, QgsAttributeEditorContext
-from math import pi, sqrt, sin, cos
 
 from linkit.qgissettingmanager import SettingDialog
 from linkit.core.mysettings import MySettings
+from linkit.core.arc import arc
 from linkit.ui.ui_linker import Ui_linker
-
-
-def floatrange(a, b, step):
-    while a < b:
-        yield a
-        a += step
-    yield b
 
 
 def centroid(feature):
@@ -32,19 +25,13 @@ def centroid(feature):
         return geom.centroid().asPoint()
 
 
-def castFeatureId(text):
-    try:
-        return long(text)
-    except ValueError:
-        return None
-
-
 class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
     def __init__(self, iface):
         # GUI
         QDockWidget.__init__(self)
         self.setupUi(self)
         SettingDialog.__init__(self, MySettings(), False, True)
+
         self.relationReferenceWidget.setAllowMapIdentification(True)
         self.relationReferenceWidget.setEmbedForm(False)
 
@@ -60,7 +47,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.relationManager = QgsProject.instance().relationManager()
         self.relationManager.relationsLoaded.connect(self.loadRelations)
         self.relation = QgsRelation()
-        self.feature = QgsFeature()
+        self.referencingFeature = QgsFeature()
         self.relationWidgetWrapper = None
         self.editorContext = QgsAttributeEditorContext()
         self.editorContext.setVectorLayerTools(self.iface.vectorLayerTools())
@@ -82,7 +69,6 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         else:
             self.relationReferenceWidget.mapIdentification()
 
-
     @pyqtSlot(name="on_identifyReferencingFeatureButton_clicked")
     def activateMapTool(self):
         self.iface.mapCanvas().setMapTool(self.mapTool)
@@ -92,7 +78,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
 
     def loadRelations(self):
         self.relation = QgsRelation()
-        self.feature = QgsFeature()
+        self.referencingFeature = QgsFeature()
         self.relationComboBox.clear()
         for relation in self.relationManager.referencedRelations():
             if relation.referencingLayer().hasGeometryType():
@@ -118,7 +104,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
 
     def setReferencingFeature(self, feature=QgsFeature()):
         self.deactivateMapTool()
-        self.feature = QgsFeature(feature)
+        self.referencingFeature = QgsFeature(feature)
 
         del self.relationWidgetWrapper
 
@@ -151,9 +137,9 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.relationReferenceWidget.setEmbedForm(False)
 
     def foreignKeyChanged(self, newKey):
-        if not self.relation.isValid() or not self.relation.referencingLayer().isEditable() or not self.feature.isValid():
+        if not self.relation.isValid() or not self.relation.referencingLayer().isEditable() or not self.referencingFeature.isValid():
             return
-        if not self.relation.referencingLayer().editBuffer().changeAttributeValue(self.feature.id(), self.fieldIndex(), newKey):
+        if not self.relation.referencingLayer().editBuffer().changeAttributeValue(self.referencingFeature.id(), self.fieldIndex(), newKey):
             self.iface.messageBar().pushMessage("Link It", "Cannot change attribute value.", QgsMessageBar.CRITICAL)
 
     def relationEditableChanged(self):
@@ -161,10 +147,10 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
             self.relationWidgetWrapper.setEnabled(self.relation.isValid() and self.relation.referencingLayer().isEditable())
 
     def layerValueChangedOutside(self, fid, fieldIdx, value):
-        if not self.relation.isValid() or not self.feature.isValid() or self.relationWidgetWrapper is None:
+        if not self.relation.isValid() or not self.referencingFeature.isValid() or self.relationWidgetWrapper is None:
             return
         # not the correct feature
-        if fid != self.feature.id():
+        if fid != self.referencingFeature.id():
             return
         # not the correct field
         if fieldIdx != self.fieldIndex():
@@ -194,53 +180,21 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
             self.relation.referencingLayer().attributeValueChanged.disconnect(self.layerValueChangedOutside)
 
 
-
-"""
-    @pyqtSlot(bool, name="on_drawButton_toggled")
-    def drawLink(self, dummy=None):
+    @pyqtSlot(name="on_drawButton_toggled")
+    def drawLink(self):
         self.linkRubber.reset()
-        ok, dstFeature = self.getFeature()
+        referencedFeature = self.relationReferenceWidget.getFeature()
 
-        if not ok or not self.drawButton.isChecked():
+        if not self.drawButton.isChecked() or not self.feature.isValid() or not referencedFeature.isValid() or not self.relation.isValid():
             return
 
-        # centroid of destination feature
-        p1 = centroid(dstFeature)
-        # centroid of source feature
-        srcFeature = QgsFeature()
-        srcId = dstFeature[self.destinationField]
-        if not srcId:
-            return
-        if self.sourceLayer.getFeatures(QgsFeatureRequest().setFilterFid(srcId)).nextFeature(srcFeature) is False:
-            return
-        p2 = centroid(srcFeature)
-        # point in middle
-        mp = QgsPoint((p1.x()+p2.x())/2, (p1.y()+p2.y())/2)
-        # distance between the two points
-        d = sqrt(p1.sqrDist(p2))
-        # orthogonal direction to segment p1-p2
-        az = (p1.azimuth(p2)+90)*pi/180
-        # create point distant to segment of offset of segment length, will be center of circular arc
-        # offset should be  0 < offset < 1
-        offset = 1/12
-        cp = QgsPoint(mp.x()+d*offset*sin(az),
-                      mp.y()+d*offset*cos(az))
-        # radius
-        r = d*sqrt(4*offset*offset+1)/2
-        # calculate start and end azimuth of circular arc
-        az1 = cp.azimuth(p1)
-        az2 = cp.azimuth(p2)
-        if az2 < az1:
-            az2 += 360
-        # draw arc
-        vx = [cp.x()+r*sin(az*pi/180) for az in floatrange(az1, az2, 5)]
-        vy = [cp.y()+r*cos(az*pi/180) for az in floatrange(az1, az2, 5)]
-        arc = [QgsPoint(vx[i], vy[i]) for i in range(len(vx))]
-        geom = QgsGeometry().fromPolyline(arc)
+        p1 = centroid(referencedFeature)
+        p2 = centroid(self.referencingFeature)
+        geom = arc(p1, p2)
+
         self.linkRubber.setToGeometry(geom, self.destinationLayer)
         self.linkRubber.setWidth(self.settings.value("rubberWidth"))
         self.linkRubber.setColor(self.settings.value("rubberColor"))
         self.linkRubber.setLineStyle(Qt.DashLine)
 
         self.mapCanvas.refresh()
-"""

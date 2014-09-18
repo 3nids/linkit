@@ -56,13 +56,13 @@ all: $(GEN_FILES)
 ui: $(UI_FILES)
 resources: $(RC_FILES)
 
-$(UI_FILES): ui/%.py: ui/%.ui
+$(UI_FILES): $(UI_DIR)/%.py: $(UI_DIR)/%.ui
 	pyuic4 -o $@ $<
 
 $(RC_FILES): %_rc.py: %.qrc
 	pyrcc4 -o $@ $<
 
-$(LN_FILES): i18n/%.qm: i18n/%.ts
+$(LN_FILES): $(LN_DIR)/%.qm: $(LN_DIR)/%.ts
 	lrelease-qt4 $<
 
 clean:
@@ -77,7 +77,7 @@ transup:
 deploy: compile transup
 	mkdir -p $(QGISDIR)/python/plugins/$(PLUGINNAME)
 	cp -rvf * $(QGISDIR)/python/plugins/$(PLUGINNAME)/
-	rm -f $(QGISDIR)/python/plugins/$(PLUGINNAME)/$(PLUGINNAME).zip
+	rm -f $(QGISDIR)/python/plugins/$(PLUGINNAME)/$(PLUGINNAME)*.zip
 
 # The dclean target removes compiled python files from plugin directory
 dclean:

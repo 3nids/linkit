@@ -6,26 +6,14 @@ Link It
 QGIS module
 """
 
-
 from PyQt4.QtCore import QUrl, Qt, QObject
 from PyQt4.QtGui import QIcon, QAction, QDesktopServices
-
 from qgis.core import QgsProject
-from qgis.gui import QgsMapLayerAction, QgsMapLayerActionRegistry, QgsMessageBar
-
+from qgis.gui import QgsMapLayerAction, QgsMapLayerActionRegistry
 from linkit.core.mysettings import MySettings
 from linkit.gui.linkerdock import LinkerDock
-
 from linkit.resources_rc import *
-import resources_rc
 
-
-def linkManagerDialog():
-    LinkManagerDialog().exec_()
-
-
-def showSettings():
-    MySettingsDialog().exec_()
 
 
 class LinkIt(QObject):
@@ -40,11 +28,13 @@ class LinkIt(QObject):
 
     def initGui(self):
         dockVisible = self.settings.value("dockVisible")
-        if MySettings().value("dockArea") == 1:
-            self.iface.addDockWidget(Qt.RightDockWidgetArea, self.linkerDock)
-        else:
-            self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.linkerDock)
+        dockArea = self.settings.value("dockArea")
+        if dockArea not in (Qt.LeftDockWidgetArea, Qt.RightDockWidgetArea, Qt.TopDockWidgetArea, Qt.BottomDockWidgetArea):
+            dockArea = Qt.LeftDockWidgetArea
+        self.iface.addDockWidget(dockArea, self.linkerDock)
         self.linkerDock.setVisible(dockVisible)
+        self.linkerDock.visibilityChanged.connect(self.dockVisibilityChanged)
+        self.linkerDock.dockLocationChanged.connect(self.saveDockLocation)
 
         # Show dock
         self.showDockAction = QAction(QIcon(":/plugins/linkit/icons/linkit.png"), "Show link editor", self)
@@ -53,26 +43,17 @@ class LinkIt(QObject):
         self.showDockAction.triggered.connect(self.linkerDock.setVisible)
         self.iface.addPluginToMenu("&Link It", self.showDockAction)
         self.iface.addToolBarIcon(self.showDockAction)
-        # connect layer
-        self.linkManagerAction = QAction(QIcon(":/plugins/linkit/icons/connect.png"), "Links manager", self)
-        self.linkManagerAction.triggered.connect(linkManagerDialog)
-        self.iface.addPluginToMenu("&Link It", self.linkManagerAction)
-        # settings
-        self.settingsAction = QAction(QIcon(":/plugins/linkit/icons/settings.svg"), "Settings", self)
-        self.settingsAction.triggered.connect(showSettings)
-        self.iface.addPluginToMenu("&Link It", self.settingsAction)
         # help
         self.helpAction = QAction(QIcon(":/plugins/linkit/icons/help.png"), "Help", self)
         self.helpAction.triggered.connect(lambda: QDesktopServices().openUrl(QUrl("http://3nids.github.io/linkit")))
         self.iface.addPluginToMenu("&Link It", self.helpAction)
                   
     def unload(self):
+        self.linkerDock.visibilityChanged.disconnect(self.dockVisibilityChanged)
         self.linkerDock.deactivateMapTool()
 
         self.iface.removePluginMenu("&Link It", self.showDockAction)
         self.iface.removeToolBarIcon(self.showDockAction)
-        self.iface.removePluginMenu("&Link It", self.linkManagerAction)
-        self.iface.removePluginMenu("&Link It", self.settingsAction)
         self.iface.removePluginMenu("&Link It", self.helpAction)
         self.iface.removeDockWidget(self.linkerDock)
 
@@ -82,12 +63,12 @@ class LinkIt(QObject):
         # remove actions
         for relationId in self.mapLayerActions:
             if relationId not in relationsIds:
-                QgsMapLayerActionRegistry.instance().removeMapLayerActions(self.mapLayerActions[relationId])
+                QgsMapLayerActionRegistry.instance().removeMapLayerAction(self.mapLayerActions[relationId])
                 del self.mapLayerActions[relationId]
         # add actions
         for relation in relations:
             if relation.id() not in self.mapLayerActions:
-                action = QgsMapLayerAction("set related feature for %s" % relation.name(), self, relation.referencedLayer(), QgsMapLayerAction.SingleFeature)
+                action = QgsMapLayerAction("set related feature for %s" % relation.name(), self, relation.referencingLayer(), QgsMapLayerAction.SingleFeature)
                 QgsMapLayerActionRegistry.instance().addMapLayerAction(action)
                 action.triggeredForFeature.connect(self.linkIt)
                 self.mapLayerActions[relation.id()] = action
@@ -98,3 +79,10 @@ class LinkIt(QObject):
             if action == senderAction:
                 self.linkerDock.runForFeature(relationId, layer, feature)
                 return
+
+    def dockVisibilityChanged(self, dockVisible):
+        self.showDockAction.setChecked(dockVisible)
+        self.settings.setValue("dockVisible", dockVisible)
+
+    def saveDockLocation(self, dockWidgetArea):
+        self.settings.setValue("dockArea", int(dockWidgetArea))
