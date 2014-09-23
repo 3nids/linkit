@@ -123,7 +123,6 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         # set line edit
         if not self.relation.isValid() or not feature.isValid():
             self.referencingFeatureLineEdit.clear()
-            self.relationReferenceWidget.setForeignKey(None)
             return
         self.referencingFeatureLineEdit.setText("%s" % feature.id())
 
@@ -151,6 +150,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
     def deleteWrapper(self):
         if self.relationWidgetWrapper is not None:
             self.relationWidgetWrapper.valueChanged.disconnect(self.foreignKeyChanged)
+            self.relationWidgetWrapper.setValue(None)
             del self.relationWidgetWrapper
             self.relationWidgetWrapper = None
 
