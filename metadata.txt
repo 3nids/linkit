@@ -2,7 +2,7 @@
 [general]
 name=Link It
 description=Link It offers an easy way to link features on the map from the available relations in the project
-version=5.0
+version=5.0.1
 qgisMinimumVersion=2.5
 author=Denis Rouzaud
 email=denis.rouzaud@gmail.com

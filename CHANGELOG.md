@@ -1,5 +1,11 @@
 ## Changelog
 
+
+**5.0.1** 23.09.2014
+
+* Fix crash when reloading project
+* Properly initialize widget
+
 **5.0** 23.09.2014
 
 * Use relations defined in project
