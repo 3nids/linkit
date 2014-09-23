@@ -89,9 +89,9 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         for relation in self.relationManager.referencedRelations():
             if relation.referencingLayer().hasGeometryType():
                 self.relationComboBox.addItem(relation.name(), relation.id())
-        self.relationComboBox.setCurrentIndex(0)
+        self.relationComboBox.setCurrentIndex(-1)
         self.relationComboBox.currentIndexChanged.connect(self.currentRelationChanged)
-        self.currentRelationChanged(0)
+        self.currentRelationChanged(-1)
 
     def currentRelationChanged(self, index):
         # disconnect previous relation
@@ -188,9 +188,11 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
     def drawLink(self):
         self.settings.setValue("drawEnabled", self.drawButton.isChecked())
         self.linkRubber.reset()
-        referencedFeature = self.relationReferenceWidget.referencedFeature()
+        if not self.drawButton.isChecked() or not self.referencingFeature.isValid() or not self.relation.isValid():
+            return
 
-        if not self.drawButton.isChecked() or not self.referencingFeature.isValid() or not referencedFeature.isValid() or not self.relation.isValid():
+        referencedFeature = self.relationReferenceWidget.referencedFeature()
+        if not referencedFeature.isValid():
             return
 
         p1 = self.centroid(self.relation.referencedLayer(), referencedFeature)
