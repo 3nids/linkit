@@ -4,61 +4,46 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <title>Linkit by 3nids</title>
+
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="javascripts/main.js"></script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+    <script src="javascripts/scale.fix.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
   </head>
   <body>
-
+    <div class="wrapper">
       <header>
         <h1>Linkit</h1>
-        <p>A QGIS plugin to link a feature to another. By clicking on map, the plugin will then automatically save the feature's ID in the appropriate field defined by the user. [This plugin requires ItemBrowser]</p>
+        <p>A QGIS plugin to link a feature to another. By clicking on map, the plugin will then automatically save the feature&#39;s ID in the appropriate field defined by the user. [This plugin requires ItemBrowser]</p>
+        <p class="view"><a href="https://github.com/3nids/linkit">View the Project on GitHub <small>3nids/linkit</small></a></p>
+        <ul>
+          <li><a href="https://github.com/3nids/linkit/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/3nids/linkit/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/3nids/linkit">View On <strong>GitHub</strong></a></li>
+        </ul>
       </header>
-
-      <div id="banner">
-        <span id="logo"></span>
-
-        <a href="https://github.com/3nids/linkit" class="button fork"><strong>View On GitHub</strong></a>
-        <div class="downloads">
-          <span>Downloads:</span>
-          <ul>
-            <li><a href="https://github.com/3nids/linkit/zipball/master" class="button">ZIP</a></li>
-            <li><a href="https://github.com/3nids/linkit/tarball/master" class="button">TAR</a></li>
-          </ul>
-        </div>
-      </div><!-- end banner -->
-
-    <div class="wrapper">
-      <nav>
-        <ul></ul>
-      </nav>
       <section>
         <h2>
 <a name="what-" class="anchor" href="#what-"><span class="octicon octicon-link"></span></a>What ?</h2>
 
-<p>Link It is a <a href="http://www.qgis.org">QGIS</a> plugin to link a feature to another. </p>
-
-<p>The idea is to copy in a chosen field the ID of a feature by clicking on it.</p>
+<p>Link It offers an easy way to link features on the map from the available relations in the project.</p>
 
 <h2>
 <a name="how-" class="anchor" href="#how-"><span class="octicon octicon-link"></span></a>How ?</h2>
 
-<p>A demo is visible on <a href="http://www.youtube.com/watch?v=wNfiNvlhNvo&amp;hd=1">youtube</a>.</p>
+<p>A demo is visible on <a href="http://youtu.be/KhpVAQ0Irqg">youtube</a>.</p>
 
 <ol>
-<li>First, create a link in the <em>links manager</em>. Be aware, that only one link per layer can be created.</li>
-<li>A corresponding feature action is available for the destination layer</li>
-<li>Select this action, then choose a feature</li>
-<li>A dock appears on the left</li>
-<li>Click on the arrow icon and select the desired feature on map</li>
-<li>You can delete this link using the corresponding icon</li>
-<li>The plugin can also draw the link by activating the arrow icon</li>
+<li>Create relation in the project properties</li>
+<li>In the referencing layer properties, set the corresponding field as a "relation reference" widget</li>
+<li>Show the dock using the dedicated icon</li>
+<li>Select the corresponding relation</li>
+<li>Using the provided map tool, choose the referencing feature you want to show/edit.</li>
+<li>If editing on the referencing layer is turned on, you can choose a new referenced map tool using the other provided map tool.</li>
 </ol><h2>
 <a name="tip" class="anchor" href="#tip"><span class="octicon octicon-link"></span></a>Tip</h2>
 
@@ -96,11 +81,11 @@ Just change the values between underscores. </p>
     ) AS foo2;
 </code></pre>
       </section>
-      <footer>
-        <p>Project maintained by <a href="https://github.com/3nids">3nids</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></small></p>
-      </footer>
     </div>
+    <footer>
+      <p>Project maintained by <a href="https://github.com/3nids">3nids</a></p>
+      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
+    </footer>
     <!--[if !IE]><script>fixScale(document);</script><![endif]-->
     
   </body>
