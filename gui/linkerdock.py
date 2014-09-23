@@ -82,6 +82,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.iface.mapCanvas().unsetMapTool(self.mapTool)
 
     def loadRelations(self):
+        self.deleteWrapper()
         self.relation = QgsRelation()
         self.referencingFeature = QgsFeature()
         self.relationComboBox.currentIndexChanged.disconnect(self.currentRelationChanged)
@@ -114,8 +115,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
     def setReferencingFeature(self, feature=QgsFeature()):
         self.deactivateMapTool()
         self.referencingFeature = QgsFeature(feature)
-
-        del self.relationWidgetWrapper
+        self.deleteWrapper()
 
         # disable relation reference widget if no referencing feature
         self.referencedFeatureLayout.setEnabled(feature.isValid())
@@ -124,7 +124,6 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         if not self.relation.isValid() or not feature.isValid():
             self.referencingFeatureLineEdit.clear()
             self.relationReferenceWidget.setForeignKey(None)
-            self.relationWidgetWrapper = None
             return
         self.referencingFeatureLineEdit.setText("%s" % feature.id())
 
@@ -148,6 +147,12 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         # update drawn link
         self.highlightReferencingFeature()
         self.drawLink()
+
+    def deleteWrapper(self):
+        if self.relationWidgetWrapper is not None:
+            self.relationWidgetWrapper.valueChanged.disconnect(self.foreignKeyChanged)
+            del self.relationWidgetWrapper
+            self.relationWidgetWrapper = None
 
     def foreignKeyChanged(self, newKey):
         if not self.relation.isValid() or not self.relation.referencingLayer().isEditable() or not self.referencingFeature.isValid():
@@ -222,13 +227,13 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         settings = QSettings()
         color = QColor( settings.value("/Map/highlight/color", QGis.DEFAULT_HIGHLIGHT_COLOR.name()))
         alpha = int(settings.value("/Map/highlight/colorAlpha", QGis.DEFAULT_HIGHLIGHT_COLOR.alpha()))
-        buffer = float(settings.value("/Map/highlight/buffer", QGis.DEFAULT_HIGHLIGHT_BUFFER_MM))
+        bbuffer = float(settings.value("/Map/highlight/buffer", QGis.DEFAULT_HIGHLIGHT_BUFFER_MM))
         minWidth = float(settings.value("/Map/highlight/minWidth", QGis.DEFAULT_HIGHLIGHT_MIN_WIDTH_MM))
         
         self.featureHighlight.setColor(color)
         color.setAlpha(alpha)
         self.featureHighlight.setFillColor(color)
-        self.featureHighlight.setBuffer(buffer)
+        self.featureHighlight.setBuffer(bbuffer)
         self.featureHighlight.setMinWidth(minWidth)
         self.featureHighlight.show()
 
