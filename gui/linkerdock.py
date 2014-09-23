@@ -59,6 +59,10 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
         self.iface.mapCanvas().unsetMapTool(self.mapTool)
         self.linkRubber.reset()
         self.deleteHighlight()
+        self.deleteWrapper()
+        self.disconnectLayer()
+
+    def disconnectLayer(self):
         if self.relation.isValid():
             self.relation.referencingLayer().editingStarted.disconnect(self.relationEditableChanged)
             self.relation.referencingLayer().editingStopped.disconnect(self.relationEditableChanged)
@@ -83,6 +87,7 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
 
     def loadRelations(self):
         self.deleteWrapper()
+        self.disconnectLayer()
         self.relation = QgsRelation()
         self.referencingFeature = QgsFeature()
         self.relationComboBox.currentIndexChanged.disconnect(self.currentRelationChanged)
