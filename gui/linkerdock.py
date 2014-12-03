@@ -102,9 +102,12 @@ class LinkerDock(QDockWidget, Ui_linker, SettingDialog):
     def currentRelationChanged(self, index):
         # disconnect previous relation
         if self.relation.isValid():
-            self.relation.referencingLayer().editingStarted.disconnect(self.relationEditableChanged)
-            self.relation.referencingLayer().editingStopped.disconnect(self.relationEditableChanged)
-            self.relation.referencingLayer().attributeValueChanged.disconnect(self.layerValueChangedOutside)
+            try:
+                self.relation.referencingLayer().editingStarted.disconnect(self.relationEditableChanged)
+                self.relation.referencingLayer().editingStopped.disconnect(self.relationEditableChanged)
+                self.relation.referencingLayer().attributeValueChanged.disconnect(self.layerValueChangedOutside)
+            except TypeError:
+                pass
 
         self.referencingFeatureLayout.setEnabled(index >= 0)
         relationId = self.relationComboBox.itemData(index)

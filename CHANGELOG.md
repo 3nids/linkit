@@ -1,6 +1,5 @@
 ## Changelog
 
-
 **5.0.1** 23.09.2014
 
 * Fix crash when reloading project
